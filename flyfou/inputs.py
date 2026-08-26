@@ -8,6 +8,7 @@ focused — that guard lives in the bot, which owns the decision to act.
 from __future__ import annotations
 
 import re
+import time
 from typing import Optional
 
 try:
@@ -18,6 +19,8 @@ try:
 except ImportError:
     pydirectinput = None
 
+_MOVE_SETTLE = 0.03
+
 
 def available() -> bool:
     return pydirectinput is not None
@@ -25,7 +28,11 @@ def available() -> bool:
 
 def click(x: int, y: int, button: str = "left") -> None:
     pydirectinput.moveTo(x, y)
-    pydirectinput.click(x=x, y=y, button=button)
+    # DirectX clients read the cursor on their own tick, so a button pressed in
+    # the same instant as the move is regularly handled at the old position —
+    # which shows up as clicks that fail to select the monster under them.
+    time.sleep(_MOVE_SETTLE)
+    pydirectinput.click(button=button)
 
 
 def press(key: str) -> None:

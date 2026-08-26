@@ -37,7 +37,7 @@ hour into a run.
 | Step | What you do |
 | --- | --- |
 | **Name this farm spot** | Something you'll recognise later, e.g. `aibatt-lv30`. |
-| **Pick the game window** | Live thumbnails of every window on screen — click the one showing the game. No typing window titles. |
+| **Pick the game window** | Live thumbnails of every window on screen — click the one showing the game. No typing window titles. The title is remembered, so if you run two clients of the same game it farms in the one you picked. |
 | **Show it the monster** | Freezes a screenshot; drag a box around the monster. Capture two or three facings for better matching. A green box appears over whatever it currently matches, with the score. |
 | **Mark your home landmark** | Optional. A rock, a statue, a building corner — something that doesn't move. Flyfou walks back to it so your character doesn't drift off the spot. |
 | **Mark your own HP bar** | Drag a box around the filled part. The colour is detected automatically from the pixels inside the box; you can override it if it guessed wrong. The percentage updates live while you adjust. |
@@ -49,7 +49,9 @@ hour into a run.
 Drag the box with the mouse, then press Enter to accept it. Arrow keys nudge it
 a pixel at a time and Shift+arrows resize it, which matters for HP bars only a
 few pixels tall; a magnifier follows the cursor so you can land on the exact
-pixel. Esc cancels.
+pixel. The note at the top moves out of the way when you approach it, and **H**
+hides it outright — the target's HP bar is usually drawn right underneath it.
+Esc cancels.
 
 ## The control panel
 
@@ -169,8 +171,10 @@ build.py          produces dist/Flyfou.exe
 
 ## Extending
 
-The state machine is `Bot._searching` / `_fighting` / `_returning` in
-`flyfou/bot.py`. Auto-loot, auto-potion, buff upkeep and multi-spot rotation
+The state machine is `Bot._searching` / `_attack` / `_returning` in
+`flyfou/bot.py`, picked between by `Bot._update_engagement`, which reads the
+target's HP bar to decide whether a fight is on — so a monster you target by
+hand counts the same as one the bot clicked. Auto-loot, auto-potion, buff upkeep and multi-spot rotation
 are all reasonable additions and none are included. Anything that needs to act
 goes through `Bot._click` and `Bot._press`, which refuse to do anything unless
 the game window is in the foreground — keep new behaviour behind those and the

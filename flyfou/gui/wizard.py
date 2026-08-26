@@ -412,8 +412,9 @@ class WindowStep(Step):
                  f"{info.client[2]}×{info.client[3]} pixels"
         )
         self.hint.set(
-            "Flyfou will find this window again by its program name, so a changing "
-            "title bar won't break the profile.", "info",
+            "Flyfou remembers this window's title and program, and finds the closest "
+            "match next time — so a level in the title bar going up is fine, and a "
+            "second client of the same game won't be picked by mistake.", "info",
         )
         self._highlight()
 
@@ -863,8 +864,9 @@ class SkillsStep(Step):
         )
         self.timeout.pack(fill="x")
         ttk.Label(timing.body, style="PanelMuted.TLabel", wraplength=340, justify="left",
-                  text="How long the target's bar has to read empty before Flyfou counts a kill "
-                       "and looks for the next one.").pack(anchor="w", pady=(8, 0))
+                  text="Flyfou stops attacking and looks for the next monster as soon as the bar "
+                       "empties. This is only how long it waits before counting the kill, for when "
+                       "nothing else gets targeted in the meantime.").pack(anchor="w", pady=(8, 0))
         return frame
 
     def enter(self):

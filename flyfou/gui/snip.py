@@ -23,6 +23,7 @@ _SELECT = "#46cf94"
 _MIN_SIZE = 3
 _LOUPE_HALF = 22
 _LOUPE_ZOOM = 4
+_DODGE_GAP = 70  # clearance the banner keeps from the pointer
 
 
 @dataclass
@@ -141,6 +142,7 @@ class _Overlay(tk.Toplevel):
         # binding both would run every handler twice and nudge two pixels.
         self.bind("<Escape>", lambda _e: self._cancel())
         self.bind("<Return>", lambda _e: self._accept())
+        self.bind("<KeyPress-h>", lambda _e: self._toggle_banner())
         for key, delta in (("Left", (-1, 0)), ("Right", (1, 0)), ("Up", (0, -1)), ("Down", (0, 1))):
             self.bind(f"<{key}>", lambda _e, d=delta: self._nudge(d, resize=False))
             self.bind(f"<Shift-{key}>", lambda _e, d=delta: self._nudge(d, resize=True))
@@ -162,18 +164,42 @@ class _Overlay(tk.Toplevel):
         lines = [
             self.instruction,
             "Drag a box around it, then press Enter   ·   arrow keys nudge, "
-            "Shift+arrows resize   ·   Esc cancels",
+            "Shift+arrows resize   ·   H hides this note   ·   Esc cancels",
         ]
         cx = self.width // 2
         text = self.canvas.create_text(cx, 34, text="\n".join(lines), fill=theme.FG,
-                                       font=theme.FONT, justify="center")
+                                       font=theme.FONT, justify="center", tags="banner")
         bounds = self.canvas.bbox(text)
         pad = 16
         box = self.canvas.create_rectangle(
             bounds[0] - pad, bounds[1] - pad, bounds[2] + pad, bounds[3] + pad,
-            fill="#0d1117", outline=_SELECT,
+            fill="#0d1117", outline=_SELECT, tags="banner",
         )
         self.canvas.tag_lower(box, text)
+        # The whole group, not the text: the outline puts the box a pixel above it,
+        # and _dodge_banner moves by group bbox, so anything else drifts on the way back.
+        self._banner_home = self.canvas.bbox("banner")[1]
+        self._banner_low = False
+        self._banner_hidden = False
+
+    def _dodge_banner(self, y: int) -> None:
+        """This note sits exactly where games draw the target's health bar, so it
+        swaps to the other end of the screen when the pointer comes near it."""
+        if self._banner_hidden:
+            return
+        bounds = self.canvas.bbox("banner")
+        if bounds is None or not (bounds[1] - _DODGE_GAP <= y <= bounds[3] + _DODGE_GAP):
+            return
+        height = bounds[3] - bounds[1]
+        destination = self._banner_home if self._banner_low else self.height - 24 - height
+        if destination - _DODGE_GAP <= y <= destination + height + _DODGE_GAP:
+            return  # both ends are under the pointer; H is the way out of this one
+        self.canvas.move("banner", 0, destination - bounds[1])
+        self._banner_low = not self._banner_low
+
+    def _toggle_banner(self) -> None:
+        self._banner_hidden = not self._banner_hidden
+        self.canvas.itemconfigure("banner", state="hidden" if self._banner_hidden else "normal")
 
     def _redraw(self) -> None:
         if self._sel is None:
@@ -224,6 +250,7 @@ class _Overlay(tk.Toplevel):
             return
         self._sel = (*self._origin, *self._clamp(event.x, event.y))
         self._redraw()
+        self._dodge_banner(event.y)
         self._update_loupe(event.x, event.y)
 
     def _on_release(self, event) -> None:
@@ -239,6 +266,7 @@ class _Overlay(tk.Toplevel):
     def _on_move(self, event) -> None:
         self.canvas.coords(self._vline, event.x, 0, event.x, self.height)
         self.canvas.coords(self._hline, 0, event.y, self.width, event.y)
+        self._dodge_banner(event.y)
         self._update_loupe(event.x, event.y)
 
     def _update_loupe(self, x: int, y: int) -> None:

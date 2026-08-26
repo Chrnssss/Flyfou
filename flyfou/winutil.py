@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 import ctypes.wintypes as wintypes
+import difflib
 import os
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
@@ -29,6 +30,9 @@ _SHELL_TITLES = {
     "nvidia geforce overlay",
 }
 _MIN_CLIENT = (320, 240)
+_TITLE_FLOOR = 0.55  # below this a title is a different window, not a renamed one
+_AMBIGUOUS_MARGIN = 0.25
+_EXACT_BONUS = 1.0  # puts an exact title out of reach of any near miss
 
 
 def enable_dpi_awareness() -> None:
@@ -145,23 +149,53 @@ def list_candidate_windows(own_pid_titles: Optional[List[str]] = None) -> List[W
     return found
 
 
-def find_window(title_contains: str = "", process: str = "") -> Optional[WindowInfo]:
-    """Locate the game again on a later run.
+def _title_likeness(saved: str, candidate: str) -> float:
+    """0-1: how much a candidate's title looks like the one saved in the profile."""
+    saved, candidate = saved.strip().lower(), candidate.strip().lower()
+    if not saved or not candidate:
+        return 0.0
+    if saved == candidate:
+        return 1.0
+    if saved in candidate or candidate in saved:
+        return 0.9
+    return difflib.SequenceMatcher(None, saved, candidate).ratio()
 
-    Process name is tried first: Flyff clients put the character name and level in
-    the title bar, so a title saved today often won't match tomorrow.
+
+def rank_windows(title_contains: str = "", process: str = "") -> List[Tuple[float, WindowInfo]]:
+    """Candidates for this profile's game window, best first.
+
+    The title outranks the process name: two clients of the same game share a
+    process, and the character name in the title bar is the only thing that tells
+    them apart. Similarity rather than an exact match, because the title also
+    carries a level that goes up.
     """
-    candidates = list_candidate_windows()
-    if process:
-        for info in candidates:
-            if info.process.lower() == process.lower():
-                return info
-    if title_contains:
-        needle = title_contains.lower()
-        for info in candidates:
-            if needle in info.title.lower():
-                return info
-    return None
+    ranked = []
+    for info in list_candidate_windows():
+        likeness = _title_likeness(title_contains, info.title)
+        same_process = bool(process) and info.process.lower() == process.lower()
+        if likeness < _TITLE_FLOOR and not same_process:
+            continue
+        score = likeness * 2.0 + (1.0 if same_process else 0.0)
+        if likeness >= 1.0:
+            # Character names sharing a long prefix ('Airborn - Mynuthyj' against
+            # 'Airborn - Mynuthbp') score ~0.89 on similarity alone, close enough to
+            # read as a tie. Having the exact title is not a tie, so say so outright.
+            score += _EXACT_BONUS
+        ranked.append((score, info))
+    ranked.sort(key=lambda pair: -pair[0])
+    return ranked
+
+
+def find_window(title_contains: str = "", process: str = "") -> Optional[WindowInfo]:
+    """Locate the game again on a later run."""
+    ranked = rank_windows(title_contains, process)
+    return ranked[0][1] if ranked else None
+
+
+def is_ambiguous(ranked: List[Tuple[float, WindowInfo]]) -> bool:
+    """Two windows the profile fits about equally well — usually a second client
+    of the same game, where picking the wrong one silently farms nothing."""
+    return len(ranked) > 1 and ranked[0][0] - ranked[1][0] < _AMBIGUOUS_MARGIN
 
 
 def bring_to_front(hwnd: int) -> bool:

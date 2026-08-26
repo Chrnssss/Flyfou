@@ -182,6 +182,15 @@ def no_game_window(title_hint: Optional[str]) -> str:
     return "No game window picked yet. Press Set up and choose the game window."
 
 
+def ambiguous_window(chosen: str, runner_up: str) -> str:
+    return (
+        f"Two open windows match this profile, and Flyfou picked '{chosen}' over "
+        f"'{runner_up}'. If that's the wrong character, press Set up, go to 'Pick the "
+        f"game window' and click the right one — the profile remembers the window "
+        f"title, which is what tells two clients apart."
+    )
+
+
 def capture_not_foreground() -> str:
     return (
         "The game wasn't in front when the screenshot was taken, so you'd be cropping "

@@ -26,6 +26,7 @@ class Launcher(tk.Tk):
         self.profile: Optional[Profile] = None
         self._images = imaging.ImageHolder()
         self._panel: Optional[ControlPanel] = None
+        self._found: Optional[winutil.WindowInfo] = None
 
         self.title("Flyfou")
         theme.apply(self)
@@ -159,7 +160,7 @@ class Launcher(tk.Tk):
         rotation = " → ".join(keys) if keys else "none"
         attack = profile.attack_key.upper() if profile.attack_key else "click only"
         lines = [
-            f"Game window:  {profile.window_process or profile.window_title or 'not set'}",
+            f"Game window:  {profile.window_title or profile.window_process or 'not set'}",
             f"Captured at:  {_size_text(profile.client_size)}",
             f"Match threshold:  {profile.match_threshold:.2f}",
             f"Attack:  {attack}    Skills:  {rotation}",
@@ -202,10 +203,14 @@ class Launcher(tk.Tk):
     def _check_window(self) -> None:
         profile = self.profile
         if profile is not None and not self._crippled:
-            info = winutil.find_window(profile.window_title, profile.window_process)
+            ranked = winutil.rank_windows(profile.window_title, profile.window_process)
+            self._found = ranked[0][1] if ranked else None
+            info = self._found
             if info is None:
                 self.fit_chip.set("The game window isn't open right now — Flyfou will wait for it.",
                                   "warn")
+            elif winutil.is_ambiguous(ranked):
+                self.fit_chip.set(errors.ambiguous_window(info.title, ranked[1][1].title), "warn")
             elif profile.size_changed(*info.client_size):
                 self.fit_chip.set(
                     f"The game is {_size_text(info.client_size)} now, but this profile was made at "
@@ -214,7 +219,8 @@ class Launcher(tk.Tk):
                     "warn",
                 )
             else:
-                self.fit_chip.set(f"Found the game at {_size_text(info.client_size)}.", "good")
+                self.fit_chip.set(f"Will farm in '{info.title}' ({_size_text(info.client_size)}).",
+                                  "good")
         self.after(_WINDOW_CHECK_MS, self._check_window)
 
     # ---- actions ---------------------------------------------------------- #
@@ -262,8 +268,9 @@ class Launcher(tk.Tk):
         except FlyfouError as exc:
             messagebox.showerror("Flyfou", exc.full(), parent=self)
             return
+        hwnd = self._found.hwnd if self._found else None
         self.withdraw()
-        self._panel = ControlPanel(self, profile, on_closed=self._panel_closed)
+        self._panel = ControlPanel(self, profile, hwnd=hwnd, on_closed=self._panel_closed)
 
     def _panel_closed(self) -> None:
         self._panel = None

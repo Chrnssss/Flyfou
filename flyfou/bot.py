@@ -32,6 +32,9 @@ STOPPED = "Stopped"
 _MISSES_BEFORE_HINT = 12
 _FAILED_ENGAGES_BEFORE_HINT = 3
 _UNREADABLE_HP_SECONDS = 8.0
+_TARGET_PRESENT = 0.05  # target bar fill that counts as "something is targeted"
+_TARGET_SETTLE = 0.6  # bar must read empty this long before we stop attacking
+_ENGAGE_GRACE = 0.5  # how long a click gets to put a target bar on screen
 
 
 # --------------------------------------------------------------------------- #
@@ -123,7 +126,7 @@ class _Cooldown:
 # --------------------------------------------------------------------------- #
 
 class Bot:
-    def __init__(self, profile: Profile, echo: bool = False):
+    def __init__(self, profile: Profile, echo: bool = False, hwnd: Optional[int] = None):
         self.profile = profile
         self.reporter = Reporter(echo=echo)
 
@@ -133,7 +136,9 @@ class Bot:
         self._paused = True
         self._thread: Optional[threading.Thread] = None
 
-        self._hwnd: Optional[int] = None
+        # Seeded by the launcher so the run uses the window the user was just
+        # shown, rather than re-picking between two clients of the same game.
+        self._hwnd: Optional[int] = hwnd
         self._monsters: List[np.ndarray] = []
         self._home: Optional[np.ndarray] = None
         self._loaded_for_size: Optional[Tuple[int, int]] = None
@@ -141,6 +146,7 @@ class Bot:
         self._skills = [_Cooldown(s.key, s.cooldown) for s in profile.skills]
         self._engaged = False
         self._target_empty_since = 0.0
+        self._clicked_at = 0.0
         self._kills = 0
         self._kills_since_home = 0
         self._last_wander = 0.0
@@ -183,6 +189,10 @@ class Bot:
     def pause(self) -> None:
         if not self._paused:
             self._paused = True
+            # Timers stop with the run: coming back an hour later must not read as
+            # a target that has been dead for an hour.
+            self._clicked_at = 0.0
+            self._target_empty_since = 0.0
             inputs.release_all()
             self.reporter.log("Paused — no input will be sent.")
 
@@ -214,14 +224,17 @@ class Bot:
         if self._hwnd is not None:
             self.reporter.hint("window_gone", errors.window_gone(self.profile.window_title))
             self._hwnd = None
-        info = winutil.find_window(self.profile.window_title, self.profile.window_process)
-        if info is None:
+        ranked = winutil.rank_windows(self.profile.window_title, self.profile.window_process)
+        if not ranked:
             self.reporter.hint("no_window", errors.no_game_window(self.profile.window_title), cooldown=15.0)
             return None
+        info = ranked[0][1]
         self._hwnd = info.hwnd
         self.reporter.forget("no_window")
         self.reporter.forget("window_gone")
-        self.reporter.log(f"Found the game window: {info.title}")
+        self.reporter.log(f"Attached to the game window: {info.title}")
+        if winutil.is_ambiguous(ranked):
+            self.reporter.log(errors.ambiguous_window(info.title, ranked[1][1].title), level="warn")
         return self._hwnd
 
     def _ensure_templates(self, client_w: int, client_h: int) -> None:
@@ -281,7 +294,7 @@ class Bot:
             max(0, min(client_w - 1, client_w // 2 + random.randint(-radius, radius))),
             max(0, min(client_h - 1, client_h // 2 + random.randint(-radius, radius))),
         )
-        self._click(target, button="right")
+        self._click(target)
 
     def _attack(self) -> None:
         now = time.time()
@@ -296,6 +309,23 @@ class Bot:
     # ---- states ----------------------------------------------------------- #
 
     def _searching(self, frame: np.ndarray, client_w: int, client_h: int) -> None:
+        now = time.time()
+        if self._clicked_at:
+            # A click is still in flight. Whether it landed is decided by the
+            # target's HP bar in _update_engagement, not by blocking here.
+            if now - self._clicked_at < _ENGAGE_GRACE:
+                return
+            self._clicked_at = 0.0
+            self._failed_engages += 1
+            if self._failed_engages >= _FAILED_ENGAGES_BEFORE_HINT:
+                self.reporter.hint(
+                    "target_hp",
+                    errors.target_hp_never_reads(
+                        self.profile.target_hp.filled_color, self.profile.target_hp.tolerance
+                    ),
+                )
+                self._failed_engages = 0
+
         match = vision.best_match(frame, self._monsters)
         score = match.score if match else 0.0
         self._set(match_score=score)
@@ -319,45 +349,47 @@ class Bot:
         self._best_miss_score = 0.0
         self.reporter.forget("no_monster")
 
-        if not self._click(match.center, button="left"):
-            return
-        time.sleep(0.4)
+        if self._click(match.center):
+            self._clicked_at = time.time()
 
-        fresh = capture.grab_client(self._hwnd)
-        target_hp = self._read_bar(fresh[0], self.profile.target_hp) if fresh else 0.0
-        self._set(target_hp=target_hp)
-        if target_hp > 0.02:
-            self._engaged = True
+    # ---- engagement -------------------------------------------------------- #
+
+    def _empty_for(self, now: float) -> float:
+        return now - self._target_empty_since if self._target_empty_since else 0.0
+
+    def _update_engagement(self, target_hp: float, now: float) -> None:
+        """Follow the target's HP bar rather than our own clicks.
+
+        A monster targeted by hand then counts exactly like one the bot clicked,
+        and a target that dies is noticed on the next frame instead of after a
+        blocking re-grab.
+        """
+        if target_hp > _TARGET_PRESENT:
+            if self._engaged and self._empty_for(now) >= _TARGET_SETTLE:
+                self._register_kill()  # the old target ended; this bar is a new one
             self._target_empty_since = 0.0
-            self._failed_engages = 0
-            self.reporter.forget("target_hp")
-            self.reporter.log(f"Engaged a target (match {score:.2f}).", level="good")
-        else:
-            self._failed_engages += 1
-            if self._failed_engages >= _FAILED_ENGAGES_BEFORE_HINT:
-                self.reporter.hint(
-                    "target_hp",
-                    errors.target_hp_never_reads(
-                        self.profile.target_hp.filled_color, self.profile.target_hp.tolerance
-                    ),
-                )
+            self._clicked_at = 0.0
+            if not self._engaged:
+                self._engaged = True
                 self._failed_engages = 0
-
-    def _fighting(self, target_hp: float) -> None:
-        now = time.time()
-        if target_hp <= 0.02:
-            if self._target_empty_since == 0.0:
-                self._target_empty_since = now
-            elif now - self._target_empty_since >= self.profile.target_lost_timeout:
-                self._engaged = False
-                self._target_empty_since = 0.0
-                self._kills += 1
-                self._kills_since_home += 1
-                self._set(kills=self._kills)
-                self.reporter.log(f"Target down — {self._kills} killed this session.", level="good")
+                self.reporter.forget("target_hp")
+                self.reporter.log("Engaged a target.", level="good")
             return
-        self._target_empty_since = 0.0
-        self._attack()
+
+        if not self._engaged:
+            return
+        if self._target_empty_since == 0.0:
+            self._target_empty_since = now
+        elif now - self._target_empty_since >= self.profile.target_lost_timeout:
+            self._engaged = False
+            self._target_empty_since = 0.0
+            self._register_kill()
+
+    def _register_kill(self) -> None:
+        self._kills += 1
+        self._kills_since_home += 1
+        self._set(kills=self._kills)
+        self.reporter.log(f"Target down — {self._kills} killed this session.", level="good")
 
     def _returning(self, frame: np.ndarray, client_w: int, client_h: int) -> None:
         match = vision.best_match(frame, [self._home]) if self._home is not None else None
@@ -381,7 +413,7 @@ class Bot:
             max(0, min(client_w - 1, int(client_w // 2 + dx * scale))),
             max(0, min(client_h - 1, int(client_h // 2 + dy * scale))),
         )
-        self._click(target, button="right")
+        self._click(target)
 
     # ---- the loop --------------------------------------------------------- #
 
@@ -443,9 +475,12 @@ class Bot:
         if not self._check_player_hp(player_hp):
             return
 
-        if self._engaged:
+        now = time.time()
+        self._update_engagement(target_hp, now)
+
+        if self._engaged and self._empty_for(now) < _TARGET_SETTLE:
             self._set(state=FIGHTING)
-            self._fighting(target_hp)
+            self._attack()
         elif self._home is not None and self._kills_since_home >= self.profile.kills_before_home_check:
             self._set(state=RETURNING)
             self._returning(frame, client_w, client_h)

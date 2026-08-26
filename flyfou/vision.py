@@ -12,6 +12,9 @@ try:
 except ImportError:
     cv2 = None
 
+_COARSE_WIDTH = 640
+_MIN_COARSE_TEMPLATE = 16  # below this a shrunken template is too mushy to locate
+
 
 @dataclass
 class Match:
@@ -47,17 +50,66 @@ def best_match(scene: np.ndarray, templates: Sequence[np.ndarray]) -> Optional[M
     even when it's poor — callers threshold it themselves so they can report the
     near-miss."""
     best: Optional[Match] = None
+    scene_h, scene_w = scene.shape[:2]
+    factor = _COARSE_WIDTH / scene_w if scene_w > _COARSE_WIDTH else 1.0
+    coarse: Optional[np.ndarray] = None
+
     for template in templates:
         if template is None or template.size == 0:
             continue
         th, tw = template.shape[:2]
-        if th > scene.shape[0] or tw > scene.shape[1]:
+        if th > scene_h or tw > scene_w:
             continue
-        result = cv2.matchTemplate(scene, template, cv2.TM_CCOEFF_NORMED)
-        _, score, _, loc = cv2.minMaxLoc(result)
-        if best is None or score > best.score:
-            best = Match(float(score), int(loc[0]), int(loc[1]), tw, th)
+
+        match = None
+        if factor < 1.0 and min(th, tw) * factor >= _MIN_COARSE_TEMPLATE:
+            if coarse is None:
+                coarse = _shrink(scene, factor)
+            match = _coarse_then_exact(scene, coarse, template, factor)
+        if match is None:
+            result = cv2.matchTemplate(scene, template, cv2.TM_CCOEFF_NORMED)
+            _, score, _, loc = cv2.minMaxLoc(result)
+            match = Match(float(score), int(loc[0]), int(loc[1]), tw, th)
+
+        if best is None or match.score > best.score:
+            best = match
     return best
+
+
+def _shrink(image: np.ndarray, factor: float) -> np.ndarray:
+    size = (max(4, int(round(image.shape[1] * factor))), max(4, int(round(image.shape[0] * factor))))
+    return cv2.resize(image, size, interpolation=cv2.INTER_AREA)
+
+
+def _coarse_then_exact(scene, coarse, template, factor: float) -> Optional[Match]:
+    """Locate the template in a shrunken copy of the scene, then score it properly
+    at full resolution around that spot.
+
+    Matching a 1080p frame outright costs 100-200ms per template, which is more
+    than the whole loop budget; this gives the same score and position for about
+    a tenth of the time. The refine pass is what keeps the score honest — the
+    coarse pass only has to get close.
+    """
+    th, tw = template.shape[:2]
+    small = _shrink(template, factor)
+    if small.shape[0] > coarse.shape[0] or small.shape[1] > coarse.shape[1]:
+        return None
+
+    result = cv2.matchTemplate(coarse, small, cv2.TM_CCOEFF_NORMED)
+    _, _, _, loc = cv2.minMaxLoc(result)
+
+    pad = int(round(2 / factor)) + 6  # one coarse pixel is worth 1/factor real ones
+    x, y = int(round(loc[0] / factor)), int(round(loc[1] / factor))
+    scene_h, scene_w = scene.shape[:2]
+    x0, y0 = max(0, x - pad), max(0, y - pad)
+    x1, y1 = min(scene_w, x + tw + pad), min(scene_h, y + th + pad)
+    roi = scene[y0:y1, x0:x1]
+    if roi.shape[0] < th or roi.shape[1] < tw:
+        return None
+
+    result = cv2.matchTemplate(roi, template, cv2.TM_CCOEFF_NORMED)
+    _, score, _, loc = cv2.minMaxLoc(result)
+    return Match(float(score), x0 + int(loc[0]), y0 + int(loc[1]), tw, th)
 
 
 def bar_fill_fraction(region: np.ndarray, rgb: Sequence[int], tolerance: int) -> float:

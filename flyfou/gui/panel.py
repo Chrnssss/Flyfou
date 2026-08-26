@@ -37,11 +37,12 @@ def _clock(seconds: float) -> str:
 
 
 class ControlPanel(tk.Toplevel):
-    def __init__(self, master, profile: Profile, on_closed: Optional[Callable[[], None]] = None):
+    def __init__(self, master, profile: Profile, hwnd: Optional[int] = None,
+                 on_closed: Optional[Callable[[], None]] = None):
         super().__init__(master)
         self.profile = profile
         self.on_closed = on_closed
-        self.bot = botmod.Bot(profile)
+        self.bot = botmod.Bot(profile, hwnd=hwnd)
         self.hotkeys = HotkeyManager()
         self._cursor = 0
         self._poll_job: Optional[str] = None
