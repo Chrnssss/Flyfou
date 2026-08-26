@@ -26,6 +26,12 @@ def available() -> bool:
     return pydirectinput is not None
 
 
+def move(x: int, y: int) -> None:
+    """Point at something without touching a button. Safe on its own: in Flyff a
+    click on the ground walks the character, but a hover never does."""
+    pydirectinput.moveTo(x, y)
+
+
 def click(x: int, y: int, button: str = "left") -> None:
     pydirectinput.moveTo(x, y)
     # DirectX clients read the cursor on their own tick, so a button pressed in

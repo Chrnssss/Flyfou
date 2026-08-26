@@ -164,9 +164,15 @@ class Profile:
     window_process: str = ""
     client_size: Tuple[int, int] = (0, 0)
 
-    monsters: List[TemplateRef] = field(default_factory=list)
+    # Monsters aren't recognised by appearance — see vision.find_blobs for why —
+    # so the only picture a profile keeps is the landmark it walks home to.
     home: Optional[TemplateRef] = None
     match_threshold: float = 0.80
+
+    # The part of the window that is scenery rather than interface. Hovering is
+    # harmless but clicking isn't, so the search never leaves this box — the
+    # default keeps clear of the side panels, the minimap and the skill bar.
+    play_area: FracRect = field(default_factory=lambda: FracRect(0.13, 0.05, 0.74, 0.68))
 
     player_hp: BarConfig = field(default_factory=BarConfig)
     critical_fraction: float = 0.25
@@ -202,10 +208,10 @@ class Profile:
                 "client_size": list(self.client_size),
             },
             "templates": {
-                "monsters": [t.to_dict() for t in self.monsters],
                 "home": self.home.to_dict() if self.home else None,
                 "match_threshold": float(self.match_threshold),
             },
+            "play_area": self.play_area.as_list(),
             "player_hp": dict(self.player_hp.to_dict(), critical_fraction=float(self.critical_fraction)),
             "target_hp": self.target_hp.to_dict(),
             "combat": {
@@ -243,9 +249,9 @@ class Profile:
             window_title=str(window.get("title_contains", "")),
             window_process=str(window.get("process", "")),
             client_size=(int(size[0]), int(size[1])),
-            monsters=[TemplateRef.from_dict(t) for t in (templates.get("monsters") or [])],
             home=TemplateRef.from_dict(home) if home else None,
             match_threshold=float(templates.get("match_threshold", 0.80)),
+            play_area=FracRect.from_list(data.get("play_area") or [0.13, 0.05, 0.74, 0.68]),
             player_hp=BarConfig.from_dict(player),
             critical_fraction=float(player.get("critical_fraction", 0.25)),
             target_hp=BarConfig.from_dict(data.get("target_hp")),
@@ -280,9 +286,6 @@ class Profile:
             )
         return vision.scale_template(image, scale) if scale != 1.0 else image
 
-    def load_monster_templates(self, scale: float = 1.0) -> List[np.ndarray]:
-        return [self.load_template(ref, scale) for ref in self.monsters]
-
     def load_home_template(self, scale: float = 1.0) -> Optional[np.ndarray]:
         return self.load_template(self.home, scale) if self.home else None
 
@@ -293,17 +296,16 @@ class Profile:
         issues = []
         if not self.window_title and not self.window_process:
             issues.append("No game window picked.")
-        if not self.monsters:
-            issues.append("No monster captured, so there's nothing to look for.")
+        if self.play_area.is_empty():
+            issues.append("No hunting ground marked out, so there's nowhere to look.")
         if not self.player_hp.configured():
             issues.append("Your own HP bar hasn't been marked out.")
         if not self.target_hp.configured():
             issues.append("The target HP bar hasn't been marked out — kills can't be detected without it.")
         if not self.skills and not self.attack_key:
             issues.append("No attack key or skills recorded, so the bot would never attack.")
-        for ref in self.monsters + ([self.home] if self.home else []):
-            if not self.template_path(ref).exists():
-                issues.append(f"The captured image '{ref.file}' is missing from disk.")
+        if self.home and not self.template_path(self.home).exists():
+            issues.append(f"The captured image '{self.home.file}' is missing from disk.")
         return issues
 
     def scale_for(self, client_w: int, client_h: int) -> float:

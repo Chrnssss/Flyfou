@@ -14,10 +14,10 @@ import numpy as np
 
 from .. import capture, errors, inputs, vision, winutil
 from ..errors import FlyfouError
-from ..profile import Profile, ProfileStore, Skill, TemplateRef
+from ..profile import FracRect, Profile, ProfileStore, Skill, TemplateRef
 from . import imaging, snip, theme
 from .feed import FeedFrame, GameFeed
-from .previews import BarPreview, MatchPreview
+from .previews import BarPreview, HuntingGroundPreview, MatchPreview
 from .widgets import Card, Chip, KeyCaptureButton, LabelledScale, ScrollFrame, separator
 
 _PEEK_HOLD = 5.0
@@ -55,7 +55,7 @@ class SetupWizard(tk.Toplevel):
         self.transient(master)
 
         self.steps: List["Step"] = [
-            NameStep(self), WindowStep(self), MonsterStep(self), HomeStep(self),
+            NameStep(self), WindowStep(self), HuntingGroundStep(self), HomeStep(self),
             PlayerHpStep(self), TargetHpStep(self), SkillsStep(self),
             TuningStep(self), FinishStep(self),
         ]
@@ -209,10 +209,6 @@ class SetupWizard(tk.Toplevel):
             self._templates[ref.file] = loaded
         return self._templates[ref.file]
 
-    def monster_images(self) -> List[np.ndarray]:
-        images = [self.template_image(ref) for ref in self.profile.monsters]
-        return [image for image in images if image is not None]
-
     # ---- saving ------------------------------------------------------------ #
 
     def _save(self) -> None:
@@ -222,9 +218,7 @@ class SetupWizard(tk.Toplevel):
             templates_dir = directory / "templates"
             templates_dir.mkdir(parents=True, exist_ok=True)
 
-            referenced = {ref.file for ref in profile.monsters}
-            if profile.home:
-                referenced.add(profile.home.file)
+            referenced = {profile.home.file} if profile.home else set()
             for existing in templates_dir.iterdir():
                 if existing.is_file() and existing.name not in referenced:
                     existing.unlink()
@@ -277,7 +271,7 @@ class Step:
 
 class NameStep(Step):
     title = "Name this farm spot"
-    subtitle = ("Each profile remembers one monster, one place and one set of skills. "
+    subtitle = ("Each profile remembers one place, one window and one set of skills. "
                 "Give it a name you'll recognise in the list later.")
 
     def build(self, parent):
@@ -295,7 +289,7 @@ class NameStep(Step):
         note.pack(fill="x", pady=(14, 0))
         for line in (
             "1.  Pick the game window from a list of pictures — no typing.",
-            "2.  Drag a box around the monster you want to farm.",
+            "2.  Drag a box around the ground you hunt on.",
             "3.  Drag a box around your HP bar and the target's HP bar.",
             "4.  Press your skill keys in the order you use them.",
             "Everything is checked live as you go, so you'll know it works before you start.",
@@ -455,10 +449,10 @@ class WindowStep(Step):
 
 
 class _TemplateStep(Step):
-    """Shared behaviour for the monster and home-landmark screens."""
+    """A screen that captures a picture and matches it later — only home does now."""
 
     prefix = "template"
-    what = "monster"
+    what = "landmark"
 
     def _template_row(self, parent, ref: TemplateRef, on_remove):
         row = ttk.Frame(parent, style="Raised.TFrame", padding=6)
@@ -478,15 +472,14 @@ class _TemplateStep(Step):
         return row
 
 
-class MonsterStep(_TemplateStep):
-    title = "Show it the monster"
-    subtitle = ("Get a monster on screen, then drag a box around it. Capture it at the camera "
-                "zoom you actually farm at — that matters more than anything else here.")
-    prefix = "monster"
+class HuntingGroundStep(Step):
+    title = "Mark out the hunting ground"
+    subtitle = ("Drag a box over the part of the screen that's scenery. Flyfou only ever hovers "
+                "and clicks inside it, so keep it clear of your bags, the minimap and the skill "
+                "bar — a stray click on those does something you didn't ask for.")
 
     def __init__(self, wizard):
         super().__init__(wizard)
-        self._thumbs = imaging.ImageHolder()
         self._pinned: Optional[FeedFrame] = None
         self._pinned_at = 0.0
 
@@ -499,80 +492,80 @@ class MonsterStep(_TemplateStep):
         left = ttk.Frame(frame)
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
 
-        capture_card = Card(left, "Captured monsters")
-        capture_card.pack(fill="both", expand=True)
-        ttk.Button(capture_card.body, text="Capture a monster", style="Accent.TButton",
-                   command=self._capture).pack(fill="x")
-        ttk.Label(capture_card.body, style="PanelMuted.TLabel", wraplength=300, justify="left",
-                  text="Capture two or three of the same monster facing different ways if "
-                       "matching is unreliable.").pack(anchor="w", pady=(8, 8))
-        self.list = ScrollFrame(capture_card.body, height=210)
-        self.list.pack(fill="both", expand=True)
+        card = Card(left, "Where it's allowed to look")
+        card.pack(fill="x")
+        ttk.Button(card.body, text="Mark out the hunting ground", style="Accent.TButton",
+                   command=self._mark).pack(fill="x")
+        self.region_label = Chip(card.body, "", "info", panel=True, wrap=280)
+        self.region_label.pack(anchor="w", pady=(8, 0))
+        ttk.Button(card.body, text="Use the usual box", command=self._reset).pack(
+            anchor="w", pady=(10, 0))
 
-        tuning = Card(left, "How sure it has to be")
-        tuning.pack(fill="x", pady=(12, 0))
-        self.threshold = LabelledScale(
-            tuning.body, "Match threshold", 0.45, 0.98, self.profile.match_threshold,
-            lambda v: f"{v:.2f}", self._set_threshold, step=0.01,
-        )
-        self.threshold.pack(fill="x")
-        ttk.Label(tuning.body, style="PanelMuted.TLabel", wraplength=300, justify="left",
-                  text="Higher is stricter. Too high and it never finds anything; too low and it "
-                       "attacks rocks. 0.80 is a sensible start.").pack(anchor="w", pady=(8, 0))
+        how = Card(left, "How it picks a target")
+        how.pack(fill="x", pady=(12, 0))
+        for line in (
+            "1.  Anything that isn't the ground gets boxed.",
+            "2.  It hovers them nearest-first.",
+            "3.  The cursor changes over a monster — that's the tell.",
+            "4.  Click to select, click again to attack.",
+        ):
+            ttk.Label(how.body, text=line, style="Panel.TLabel").pack(anchor="w", pady=1)
+        ttk.Label(how.body, style="PanelMuted.TLabel", wraplength=300, justify="left",
+                  text="Nothing is recognised by looks, so there's no picture to capture and "
+                       "nothing to re-do when a monster turns around.").pack(anchor="w", pady=(8, 0))
 
         right = ttk.Frame(frame)
         right.grid(row=0, column=1, sticky="nsew")
-        self.preview = MatchPreview(right)
+        self.preview = HuntingGroundPreview(right)
         self.preview.pack(fill="both", expand=True)
         ttk.Button(right, text="Check now (hides this window for a moment)",
                    command=self._check_now).pack(anchor="w", pady=(10, 0))
         return frame
 
     def enter(self):
-        self._refresh_list()
+        self._render_region()
 
-    def _set_threshold(self, value):
-        self.profile.match_threshold = float(value)
-
-    def _refresh_list(self):
-        self.list.clear()
-        if not self.profile.monsters:
-            ttk.Label(self.list.inner, text="Nothing captured yet.", style="Muted.TLabel").pack(
-                anchor="w", pady=6)
+    def _render_region(self):
+        area = self.profile.play_area
+        if area.is_empty():
+            self.region_label.set("Nothing marked out — the bot has nowhere to look.", "warn")
             return
-        for ref in list(self.profile.monsters):
-            self._template_row(self.list.inner, ref, lambda r=ref: self._remove(r))
+        width, height = self.profile.client_size or (0, 0)
+        if width and height:
+            x, y, w, h = area.to_pixels(width, height)
+            self.region_label.set(f"Searching {w}×{h} pixels at {x}, {y}.", "good")
+        else:
+            self.region_label.set("Searching the usual box — middle of the screen, clear of "
+                                  "the interface.", "good")
 
-    def _remove(self, ref):
-        self.profile.monsters = [r for r in self.profile.monsters if r is not ref]
-        self._refresh_list()
-
-    def _capture(self):
-        result = self.wizard.take_snip("Drag a box tightly around the monster.")
+    def _mark(self):
+        area = self.profile.play_area
+        result = self.wizard.take_snip(
+            "Drag a box over the ground you hunt on. Leave out the interface.",
+            None if area.is_empty() else area)
         if result is None:
             return
-        filename = self.wizard.stage_template(result.image, self.prefix)
-        self.profile.monsters.append(TemplateRef(filename, result.client_size))
+        self.profile.play_area = result.frac
         self.profile.client_size = result.client_size
-        self._refresh_list()
+        self._render_region()
+
+    def _reset(self):
+        self.profile.play_area = FracRect(0.13, 0.05, 0.74, 0.68)
+        self._render_region()
 
     def _check_now(self):
         frame = self.wizard.peek()
         if frame is not None:
             self._pinned, self._pinned_at = frame, time.time()
 
-    def _frame(self) -> Optional[FeedFrame]:
-        if self._pinned and time.time() - self._pinned_at < _PEEK_HOLD:
-            return self._pinned
-        return self.wizard.frame_now()
-
     def tick(self):
-        self.preview.update_view(self._frame(), self.wizard.monster_images(),
-                                 self.profile.match_threshold, label=self.what)
+        frame = self._pinned if self._pinned and time.time() - self._pinned_at < _PEEK_HOLD \
+            else self.wizard.frame_now()
+        self.preview.update_view(frame, self.profile.play_area)
 
     def validate(self):
-        if not self.profile.monsters:
-            return "Capture at least one monster — that's what the bot looks for."
+        if self.profile.play_area.is_empty():
+            return "Mark out the hunting ground — that's where the bot looks for monsters."
         return None
 
 
@@ -607,6 +600,18 @@ class HomeStep(_TemplateStep):
         ttk.Button(card.body, text="Skip — let it wander", command=self._skip).pack(
             anchor="w", pady=(10, 0))
 
+        tuning = Card(left, "How sure it has to be")
+        tuning.pack(fill="x", pady=(12, 0))
+        self.threshold = LabelledScale(
+            tuning.body, "Match threshold", 0.45, 0.98, self.profile.match_threshold,
+            lambda v: f"{v:.2f}", self._set_threshold, step=0.01,
+        )
+        self.threshold.pack(fill="x")
+        ttk.Label(tuning.body, style="PanelMuted.TLabel", wraplength=300, justify="left",
+                  text="Higher is stricter. Too high and it never recognises the landmark; too "
+                       "low and it stops at the wrong rock. 0.80 is a sensible start.").pack(
+            anchor="w", pady=(8, 0))
+
         right = ttk.Frame(frame)
         right.grid(row=0, column=1, sticky="nsew")
         self.preview = MatchPreview(right)
@@ -617,6 +622,9 @@ class HomeStep(_TemplateStep):
 
     def enter(self):
         self._refresh_list()
+
+    def _set_threshold(self, value):
+        self.profile.match_threshold = float(value)
 
     def _refresh_list(self):
         self.list.clear()
@@ -1048,13 +1056,19 @@ class FinishStep(Step):
         for child in self.summary.winfo_children():
             child.destroy()
         profile = self.profile
-        home = "a landmark to walk back to" if profile.home else "no landmark (it wanders)"
+        home = (f"a landmark to walk back to, matched at {profile.match_threshold:.2f}"
+                if profile.home else "no landmark (it wanders)")
+        if profile.play_area.is_empty():
+            ground = "not marked out"
+        else:
+            gx, gy, gw, gh = profile.play_area.to_pixels(*(profile.client_size or (1, 1)))
+            ground = f"{gw}×{gh} pixels at {gx}, {gy}"
         skills = ", ".join(inputs.display_name(s.key) for s in profile.skills) or "none"
         rows = [
             ("Name", profile.name),
             ("Game window", f"{profile.window_title or '—'}  ({profile.window_process or 'unknown'})"),
             ("Captured at", f"{profile.client_size[0]}×{profile.client_size[1]} pixels"),
-            ("Monsters captured", f"{len(profile.monsters)}, matched at {profile.match_threshold:.2f}"),
+            ("Hunting ground", ground),
             ("Home", home),
             ("Skills in order", skills),
             ("Basic attack", inputs.display_name(profile.attack_key) if profile.attack_key else "none"),

@@ -36,6 +36,15 @@ _TARGET_PRESENT = 0.05  # target bar fill that counts as "something is targeted"
 _TARGET_SETTLE = 0.6  # bar must read empty this long before we stop attacking
 _ENGAGE_GRACE = 0.5  # how long a click gets to put a target bar on screen
 
+_STUCK_FIGHT = 8.0  # a target whose health hasn't budged this long isn't a fight
+_ABANDON_GRACE = 3.0  # time to pick a different one before engaging again
+_REAIM_LIMIT = 25  # px a monster may drift between the two clicks and still be it
+
+_PROBE_SETTLE = 0.05  # measured: below this the game hasn't swapped the cursor yet
+_MAX_PROBES = 12  # a whole sweep is paid before anything happens, so cap it
+_GROUND_MARGIN = 34  # px a sample must keep from every blob to count as bare ground
+_HOTSPOT_REFRESH = 30.0  # how long a learnt cursor is trusted before re-checking
+
 
 # --------------------------------------------------------------------------- #
 # reporting
@@ -101,7 +110,6 @@ class Status:
     active_seconds: float = 0.0
     player_hp: Optional[float] = None
     target_hp: Optional[float] = None
-    match_score: float = 0.0
     window_found: bool = False
     window_focused: bool = False
     client_size: Tuple[int, int] = (0, 0)
@@ -139,13 +147,18 @@ class Bot:
         # Seeded by the launcher so the run uses the window the user was just
         # shown, rather than re-picking between two clients of the same game.
         self._hwnd: Optional[int] = hwnd
-        self._monsters: List[np.ndarray] = []
         self._home: Optional[np.ndarray] = None
         self._loaded_for_size: Optional[Tuple[int, int]] = None
+        self._idle_hotspot: Optional[Tuple[int, int]] = None
+        self._self_hotspot: Optional[Tuple[int, int]] = None
+        self._hotspots_learnt_at = 0.0
 
         self._skills = [_Cooldown(s.key, s.cooldown) for s in profile.skills]
         self._engaged = False
         self._target_empty_since = 0.0
+        self._target_level = 0.0
+        self._target_changed_at = 0.0
+        self._ignore_target_until = 0.0
         self._clicked_at = 0.0
         self._kills = 0
         self._kills_since_home = 0
@@ -155,7 +168,6 @@ class Bot:
         self._last_tick = 0.0
 
         self._consecutive_misses = 0
-        self._best_miss_score = 0.0
         self._failed_engages = 0
         self._player_hp_zero_since = 0.0
 
@@ -199,6 +211,9 @@ class Bot:
     def resume(self) -> None:
         if self._paused:
             self._paused = False
+            # Restart the stuck-target clock with the run, or an hour's pause reads
+            # as an hour of swinging at something that never took damage.
+            self._target_changed_at = time.time()
             self.reporter.log("Running. Bring the game to the front to let it act.", level="good")
 
     def toggle(self) -> None:
@@ -241,7 +256,6 @@ class Bot:
         if self._loaded_for_size == (client_w, client_h):
             return
         scale = self.profile.scale_for(client_w, client_h)
-        self._monsters = self.profile.load_monster_templates(scale)
         self._home = self.profile.load_home_template(scale)
         self._loaded_for_size = (client_w, client_h)
         if self.profile.size_changed(client_w, client_h):
@@ -259,11 +273,15 @@ class Bot:
         region = capture.crop_fraction(frame, bar.rect)
         return vision.bar_fill_fraction(region, bar.filled_color, bar.tolerance)
 
-    def _find(self, frame: np.ndarray, templates) -> Optional[vision.Match]:
-        match = vision.best_match(frame, templates)
-        if match is None:
+    def _hotspot_at(self, client_xy: Tuple[int, int]) -> Optional[Tuple[int, int]]:
+        """Point at something and ask the game what it is. None means we lost focus
+        and the answer would be about a different window."""
+        if not winutil.is_foreground(self._hwnd):
             return None
-        return match if match.score >= self.profile.match_threshold else None
+        cx, cy, _, _ = winutil.client_rect(self._hwnd)
+        inputs.move(cx + client_xy[0], cy + client_xy[1])
+        time.sleep(_PROBE_SETTLE)
+        return winutil.cursor_hotspot() if winutil.is_foreground(self._hwnd) else None
 
     # ---- actions ---------------------------------------------------------- #
 
@@ -308,6 +326,100 @@ class Bot:
 
     # ---- states ----------------------------------------------------------- #
 
+    def _bare_ground(self, blobs: List[vision.Blob], area_w: int, area_h: int
+                     ) -> Optional[Tuple[int, int]]:
+        """A point in the hunting ground that no blob is anywhere near.
+
+        Which pointer means "attackable" belongs to the game, not to us, so it's
+        learnt instead of assumed: whatever the cursor looks like over bare terrain
+        is the uninteresting one, and anything else is worth clicking. That keeps
+        working if the game reskins its cursors.
+        """
+        boxes = [(b.x, b.y, b.x + b.w, b.y + b.h) for b in blobs]
+        best: Optional[Tuple[int, Tuple[int, int]]] = None
+        for fy in (0.3, 0.55, 0.8):
+            for fx in (0.2, 0.4, 0.6, 0.8):
+                px, py = int(area_w * fx), int(area_h * fy)
+                # Negative when the point is inside a box, so crowded spots lose.
+                gap = min((max(x0 - px, px - x1, y0 - py, py - y1) for x0, y0, x1, y1 in boxes),
+                          default=area_w)
+                if gap >= _GROUND_MARGIN and (best is None or gap > best[0]):
+                    best = (gap, (px, py))
+        return best[1] if best else None
+
+    def _learn_cursors(self, seen: List[vision.Blob], area: Tuple[int, int, int, int],
+                       client_w: int, client_h: int) -> bool:
+        """Refresh what "nothing here" and "that's me" look like, if they're stale.
+
+        Which pointer means "attackable" belongs to the game, not to us, so it's
+        learnt instead of assumed: whatever the cursor looks like over bare
+        terrain is the uninteresting one, and anything else is worth clicking.
+
+        Both answers are constants for as long as the game is running, but they
+        were being re-learnt every tick at two hovers a time — 100 ms, a fifth of
+        a search, spent re-deriving something already known. They're cached now,
+        and still re-checked occasionally so a mid-session reskin can't strand
+        the run with a reference that no longer matches anything.
+
+        False means we can't classify anything this tick.
+        """
+        now = time.time()
+        if self._idle_hotspot is not None and now - self._hotspots_learnt_at < _HOTSPOT_REFRESH:
+            return True
+
+        ax, ay, aw, ah = area
+        ground = self._bare_ground(seen, aw, ah)
+        if ground is None:
+            # Too crowded to sample clean terrain. Carry on with what we already
+            # know rather than going blind over a temporarily busy screen.
+            return self._idle_hotspot is not None
+
+        idle = self._hotspot_at((ax + ground[0], ay + ground[1]))
+        if idle is None:
+            return False  # lost focus; the answer would be about another window
+        mine = self._hotspot_at((client_w // 2, client_h // 2))
+        if mine is None:
+            return False
+
+        self._idle_hotspot = idle
+        # Only trust it if it actually differs from bare ground; if the character
+        # isn't drawn where we expect, a bogus reference would reject everything.
+        self._self_hotspot = mine if mine != idle else None
+        self._hotspots_learnt_at = now
+        return True
+
+    def _reaim(self, point: Tuple[int, int], area: Tuple[int, int, int, int]
+               ) -> Tuple[int, int]:
+        """Where the monster we just selected has got to.
+
+        Selecting and attacking are two separate clicks in this client, and the
+        second has to land on the monster as well. Measured, it drifts only a few
+        pixels in between — but a click aimed at where it *was* engages far less
+        often, so the aim is refreshed. Anything further than a short hop is a
+        different blob rather than the same one moving, and the original aim is
+        the safer bet.
+        """
+        grabbed = capture.grab_client(self._hwnd)
+        if grabbed is None:
+            return point
+        fresh, (_, _, client_w, client_h) = grabbed
+        ax, ay, aw, ah = area
+        # A monster fought at point-blank range sits within a hop of our own
+        # sprite, and snapping the second click onto ourselves drops the target.
+        others, _mine = vision.split_self(
+            vision.find_blobs(fresh[ay:ay + ah, ax:ax + aw]),
+            (client_w // 2 - ax, client_h // 2 - ay),
+            vision.self_radius(client_h))
+        best: Optional[Tuple[int, Tuple[int, int]]] = None
+        for blob in others:
+            px, py = ax + blob.center[0], ay + blob.center[1]
+            gap = (px - point[0]) ** 2 + (py - point[1]) ** 2
+            if best is None or gap < best[0]:
+                best = (gap, (px, py))
+        if best is None or best[0] > _REAIM_LIMIT ** 2:
+            return point
+        return best[1]
+
     def _searching(self, frame: np.ndarray, client_w: int, client_h: int) -> None:
         now = time.time()
         if self._clicked_at:
@@ -326,31 +438,56 @@ class Bot:
                 )
                 self._failed_engages = 0
 
-        match = vision.best_match(frame, self._monsters)
-        score = match.score if match else 0.0
-        self._set(match_score=score)
+        ax, ay, aw, ah = self.profile.play_area.to_pixels(client_w, client_h)
+        seen = vision.find_blobs(frame[ay:ay + ah, ax:ax + aw])
 
-        if match is None or score < self.profile.match_threshold:
-            self._consecutive_misses += 1
-            self._best_miss_score = max(self._best_miss_score, score)
-            if self._consecutive_misses >= _MISSES_BEFORE_HINT:
-                self.reporter.hint(
-                    "no_monster",
-                    errors.no_monster_match(
-                        self._best_miss_score, self.profile.match_threshold, len(self._monsters)
-                    ),
-                )
-                self._consecutive_misses = 0
-                self._best_miss_score = 0.0
-            self._wander(client_w, client_h)
+        # The camera rides on the character, so the middle of the client is always
+        # the character itself: a blob to skip, and the one place guaranteed to show
+        # what the "that's a person" cursor looks like.
+        me_x, me_y = client_w // 2 - ax, client_h // 2 - ay
+        blobs, _mine = vision.split_self(seen, (me_x, me_y), vision.self_radius(client_h))
+        if not blobs:
+            self._nothing_found(0, client_w, client_h)
             return
 
-        self._consecutive_misses = 0
-        self._best_miss_score = 0.0
-        self.reporter.forget("no_monster")
+        # Nearest the character first — that's the shortest walk to the next kill.
+        blobs.sort(key=lambda b: (b.center[0] - me_x) ** 2 + (b.center[1] - me_y) ** 2)
 
-        if self._click(match.center):
-            self._clicked_at = time.time()
+        # Everything found, us included: a "bare ground" sample that landed on our
+        # own feet would teach the character's cursor as the boring one and then
+        # nothing would ever look attackable.
+        if not self._learn_cursors(seen, (ax, ay, aw, ah), client_w, client_h):
+            if self._idle_hotspot is None:
+                # Nothing learnt yet and nowhere clean to sample, so every verdict
+                # would be a guess. Move and look again.
+                self._wander(client_w, client_h)
+            return
+
+        for blob in blobs[:_MAX_PROBES]:
+            if self._paused or self._stop.is_set():
+                return
+            point = (ax + blob.center[0], ay + blob.center[1])
+            hotspot = self._hotspot_at(point)
+            if hotspot is None:
+                return
+            if hotspot != self._idle_hotspot and hotspot != self._self_hotspot:
+                self._consecutive_misses = 0
+                self.reporter.forget("no_monster")
+                # The first click only selects. Clicking the selected monster again
+                # is what orders the attack — measured: one click alone leaves the
+                # character standing still next to it indefinitely.
+                if self._click(point) and self._click(self._reaim(point, (ax, ay, aw, ah))):
+                    self._clicked_at = time.time()
+                return
+
+        self._nothing_found(len(blobs), client_w, client_h)
+
+    def _nothing_found(self, blob_count: int, client_w: int, client_h: int) -> None:
+        self._consecutive_misses += 1
+        if self._consecutive_misses >= _MISSES_BEFORE_HINT:
+            self.reporter.hint("no_monster", errors.no_monster_nearby(blob_count))
+            self._consecutive_misses = 0
+        self._wander(client_w, client_h)
 
     # ---- engagement -------------------------------------------------------- #
 
@@ -365,15 +502,24 @@ class Bot:
         blocking re-grab.
         """
         if target_hp > _TARGET_PRESENT:
+            if now < self._ignore_target_until:
+                return  # just walked away from this one; don't pick it straight back up
             if self._engaged and self._empty_for(now) >= _TARGET_SETTLE:
                 self._register_kill()  # the old target ended; this bar is a new one
             self._target_empty_since = 0.0
             self._clicked_at = 0.0
             if not self._engaged:
                 self._engaged = True
+                self._target_level = target_hp
+                self._target_changed_at = now
                 self._failed_engages = 0
                 self.reporter.forget("target_hp")
                 self.reporter.log("Engaged a target.", level="good")
+            elif abs(target_hp - self._target_level) > 0.02:
+                self._target_level = target_hp
+                self._target_changed_at = now
+            elif now - self._target_changed_at >= _STUCK_FIGHT:
+                self._abandon_target(now)
             return
 
         if not self._engaged:
@@ -384,6 +530,22 @@ class Bot:
             self._engaged = False
             self._target_empty_since = 0.0
             self._register_kill()
+
+    def _abandon_target(self, now: float) -> None:
+        """Give up on something whose health never moves.
+
+        It may be out of reach, immune, or someone else's kill — the cause doesn't
+        matter, but staying in it does: an unattended run once spent its entire
+        session swinging at one untouched monster.
+        """
+        self._engaged = False
+        self._target_empty_since = 0.0
+        self._ignore_target_until = now + _ABANDON_GRACE
+        self.reporter.log(
+            "That target's health hasn't moved in a while — leaving it and looking "
+            "for another.",
+            level="warn",
+        )
 
     def _register_kill(self) -> None:
         self._kills += 1

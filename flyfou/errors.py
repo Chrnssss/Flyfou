@@ -72,26 +72,21 @@ def dependency_report(missing: List[MissingDependency]) -> str:
 # runtime diagnostics
 # --------------------------------------------------------------------------- #
 
-def no_monster_match(best_score: float, threshold: float, template_count: int) -> str:
-    suggested = max(0.45, round(best_score - 0.03, 2))
-    msg = (
-        f"No monster match above {threshold:.2f} — best match was {best_score:.2f}. "
+def no_monster_nearby(blob_count: int) -> str:
+    if not blob_count:
+        return (
+            "The hunting ground looks like empty terrain — nothing is standing in it "
+            "at all. Either the character has wandered somewhere bare, or the hunting "
+            "ground is marked over a part of the screen with no scenery in it. "
+            "Wandering until something turns up."
+        )
+    return (
+        f"Found {blob_count} thing{'' if blob_count == 1 else 's'} in the hunting "
+        f"ground but the game's cursor called all of them scenery. If there really are "
+        f"monsters on screen, the hunting ground may be marked over the interface "
+        f"rather than the world — re-do 'Mark out the hunting ground' under Set up. "
+        f"Wandering in the meantime."
     )
-    if best_score < 0.35:
-        msg += (
-            "That's far off, so the template probably doesn't look like anything on "
-            "screen right now. Check you're at the right farm spot, then press Set up "
-            "and capture the monster again."
-        )
-    else:
-        msg += (
-            f"Try re-capturing the monster template at your current camera zoom, or "
-            f"lower the match threshold to about {suggested:.2f}. Both are on the "
-            f"'Show it the monster' screen under Set up. "
-        )
-        if template_count == 1:
-            msg += "Capturing a second template of the same monster facing another way also helps."
-    return msg
 
 
 def no_home_match(best_score: float, threshold: float) -> str:

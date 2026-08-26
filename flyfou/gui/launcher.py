@@ -134,7 +134,8 @@ class Launcher(tk.Tk):
             child.destroy()
         self.summary.configure(
             text="No profiles yet.\n\nPress New… and Flyfou will walk you through pointing it at "
-                 "the game, showing it a monster, and marking the HP bars. It takes a few minutes."
+                 "the game, marking out where you hunt, and marking the HP bars. It takes a few "
+                 "minutes."
         )
         self.fit_chip.set("", "info")
         self.ready_chip.set("Create a profile to get going.", "info")
@@ -149,20 +150,25 @@ class Launcher(tk.Tk):
         for child in self.thumbs.winfo_children():
             child.destroy()
         self._images.clear()
-        for index, ref in enumerate(profile.monsters[:5]):
-            self._thumbnail(profile, ref, f"m{index}", "Monster")
         if profile.home:
             self._thumbnail(profile, profile.home, "home", "Home")
-        if not profile.monsters and not profile.home:
-            ttk.Label(self.thumbs, text="Nothing captured yet.", style="PanelMuted.TLabel").pack(anchor="w")
+        else:
+            ttk.Label(self.thumbs, style="PanelMuted.TLabel", wraplength=420, justify="left",
+                      text="No home landmark, so it wanders around its hunting ground rather "
+                           "than returning to a fixed spot.").pack(anchor="w")
 
         keys = [skill.key.upper() for skill in profile.skills]
         rotation = " → ".join(keys) if keys else "none"
         attack = profile.attack_key.upper() if profile.attack_key else "click only"
+        if profile.play_area.is_empty():
+            ground = "not marked out"
+        else:
+            gx, gy, gw, gh = profile.play_area.to_pixels(*(profile.client_size or (1, 1)))
+            ground = f"{gw}×{gh} px at {gx}, {gy}"
         lines = [
             f"Game window:  {profile.window_title or profile.window_process or 'not set'}",
             f"Captured at:  {_size_text(profile.client_size)}",
-            f"Match threshold:  {profile.match_threshold:.2f}",
+            f"Hunting ground:  {ground}",
             f"Attack:  {attack}    Skills:  {rotation}",
             f"Pause below:  {profile.critical_fraction:.0%} HP",
             f"Created:  {_date_text(profile.created)}",
@@ -215,7 +221,7 @@ class Launcher(tk.Tk):
                 self.fit_chip.set(
                     f"The game is {_size_text(info.client_size)} now, but this profile was made at "
                     f"{_size_text(profile.client_size)}. Regions will follow the new size; if "
-                    f"matching gets flaky, re-capture the monster.",
+                    f"it starts clicking the interface, re-mark the hunting ground.",
                     "warn",
                 )
             else:

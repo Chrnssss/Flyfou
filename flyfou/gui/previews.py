@@ -5,12 +5,12 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 import numpy as np
 
 from .. import capture, vision
-from ..profile import BarConfig
+from ..profile import BarConfig, FracRect
 from . import imaging, theme
 from .feed import FeedFrame
 from .widgets import Chip
@@ -108,6 +108,113 @@ class MatchPreview(ttk.Frame):
                 foreground=theme.WARN,
             )
         return match
+
+
+class HuntingGroundPreview(ttk.Frame):
+    """The game with the hunting ground outlined and every candidate boxed.
+
+    This is what the bot itself sees: things that aren't the ground it stands on.
+    The boxes carry no identity — a monster and a signpost look alike here, and
+    the cursor decides between them at run time — so the honest thing to show is
+    the shortlist, not a verdict.
+    """
+
+    def __init__(self, master, width: int = 440, height: int = 248):
+        super().__init__(master, style="Panel.TFrame", padding=10)
+        self.box = (width, height)
+        self._images = imaging.ImageHolder()
+
+        self.canvas = tk.Canvas(self, width=width, height=height, bg="#101116",
+                                highlightthickness=1, highlightbackground=theme.LINE, bd=0)
+        self.canvas.pack(fill="both", expand=True)
+        self.canvas.bind("<Configure>", self._resized)
+        self._placeholder()
+
+        self.verdict = ttk.Label(self, text="", style="Panel.TLabel", font=theme.FONT_BOLD,
+                                 wraplength=width, justify="left")
+        self.verdict.pack(anchor="w", pady=(8, 0))
+        self.source = Chip(self, "Waiting for the game window…", "info", panel=True, wrap=width)
+        self.source.pack(anchor="w")
+
+    def _resized(self, event) -> None:
+        self.box = (event.width, event.height)
+        self.verdict.configure(wraplength=event.width)
+        self.source.configure(wraplength=event.width)
+
+    def _placeholder(self) -> None:
+        self.canvas.delete("all")
+        self.canvas.create_text(
+            self.box[0] // 2, self.box[1] // 2, fill=theme.MUTED, font=theme.FONT,
+            text="No picture from the game yet.\nMake sure it's running and not minimised.",
+            justify="center",
+        )
+
+    def update_view(self, frame: Optional[FeedFrame], area: FracRect) -> int:
+        if frame is None:
+            self._placeholder()
+            self.verdict.configure(text="", foreground=theme.FG)
+            self.source.set("Waiting for the game window…", "info")
+            return 0
+
+        text, level = frame.caption
+        self.source.set(text, level)
+
+        photo, scale, size = imaging.fitted_photo(frame.image, self.box)
+        self._images.set("frame", photo)
+        self.canvas.delete("all")
+        offset_x = (self.box[0] - size[0]) // 2
+        offset_y = (self.box[1] - size[1]) // 2
+        self.canvas.create_image(offset_x, offset_y, anchor="nw", image=photo)
+
+        client_h, client_w = frame.image.shape[:2]
+        ax, ay, aw, ah = area.to_pixels(client_w, client_h)
+        if aw < 8 or ah < 8:
+            self.verdict.configure(text="The hunting ground is empty — mark one out.",
+                                   foreground=theme.WARN)
+            return 0
+
+        def place(x, y):
+            return offset_x + x * scale, offset_y + y * scale
+
+        self.canvas.create_rectangle(*place(ax, ay), *place(ax + aw, ay + ah),
+                                     outline=theme.ACCENT, width=2, dash=(6, 4))
+
+        # Skipping our own character is the bot's rule, not this widget's — share
+        # it, or the boxes drawn here stop matching the ones it actually probes.
+        others, mine = vision.split_self(
+            vision.find_blobs(frame.image[ay:ay + ah, ax:ax + aw]),
+            (client_w // 2 - ax, client_h // 2 - ay),
+            vision.self_radius(client_h))
+        for blob in mine:
+            self.canvas.create_rectangle(
+                *place(ax + blob.x, ay + blob.y),
+                *place(ax + blob.x + blob.w, ay + blob.y + blob.h),
+                outline=_AMBER, width=2, dash=(4, 3),
+            )
+        if mine:
+            self.canvas.create_text(*place(client_w // 2, client_h // 2), fill=_AMBER,
+                                    font=theme.FONT_SMALL, text="you")
+        for blob in others:
+            self.canvas.create_rectangle(
+                *place(ax + blob.x, ay + blob.y),
+                *place(ax + blob.x + blob.w, ay + blob.y + blob.h),
+                outline=_GREEN, width=2,
+            )
+
+        found = len(others)
+        if found:
+            self.verdict.configure(
+                text=f"{found} thing{'' if found == 1 else 's'} to check in here. Flyfou hovers "
+                     f"each one nearest-first and reads the cursor to find the monsters.",
+                foreground=theme.GOOD,
+            )
+        else:
+            self.verdict.configure(
+                text="Nothing but ground in there. Either no monsters are on screen, or the box "
+                     "is too small — it should cover the scenery but not the interface.",
+                foreground=theme.WARN,
+            )
+        return found
 
 
 class BarPreview(ttk.Frame):

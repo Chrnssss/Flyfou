@@ -15,6 +15,11 @@ except ImportError:
 _COARSE_WIDTH = 640
 _MIN_COARSE_TEMPLATE = 16  # below this a shrunken template is too mushy to locate
 
+_BLOB_SCALE = 0.25  # the terrain estimate is made on a quarter-size copy
+_BLOB_BLUR = 21  # median window at that scale — about 84 px of the real frame
+_BLOB_DELTA = 26  # how far off the local background a pixel has to be to count
+_BLOB_EDGE = 2  # px of the region's own border that count as "clipped by it"
+
 
 @dataclass
 class Match:
@@ -23,6 +28,21 @@ class Match:
     y: int
     w: int
     h: int
+
+    @property
+    def center(self) -> Tuple[int, int]:
+        return self.x + self.w // 2, self.y + self.h // 2
+
+
+@dataclass
+class Blob:
+    """Something in the scene that isn't the ground — position only, no identity."""
+
+    x: int
+    y: int
+    w: int
+    h: int
+    area: int
 
     @property
     def center(self) -> Tuple[int, int]:
@@ -110,6 +130,119 @@ def _coarse_then_exact(scene, coarse, template, factor: float) -> Optional[Match
     result = cv2.matchTemplate(roi, template, cv2.TM_CCOEFF_NORMED)
     _, score, _, loc = cv2.minMaxLoc(result)
     return Match(float(score), x0 + int(loc[0]), y0 + int(loc[1]), tw, th)
+
+
+def _terrain(region: np.ndarray) -> np.ndarray:
+    """What the ground would look like with nothing standing on it.
+
+    A median ignores anything narrower than half its window, so a wide one keeps
+    the terrain and discards the sprites sitting on it. Taken at full size that
+    costs 57 ms of a 100 ms tick — most of the loop, spent every frame.
+
+    Shrinking first buys far more than it costs. Terrain is smooth by definition,
+    so it survives being sampled at a quarter size, while the median gets
+    sixteen times fewer pixels to sort. Measured against a colour oracle on this
+    map it finds slightly *more* monsters than the full-size version did, at a
+    third of the price — the sprites are small enough that dropping to a quarter
+    size removes them from the estimate rather than blurring them into it.
+    """
+    h, w = region.shape[:2]
+    small = cv2.resize(region, (max(8, int(w * _BLOB_SCALE)), max(8, int(h * _BLOB_SCALE))),
+                       interpolation=cv2.INTER_AREA)
+    # medianBlur wants an odd window, and one that fits inside what it's given.
+    window = min(_BLOB_BLUR, (min(small.shape[:2]) - 1) | 1)
+    if window >= 3:
+        small = cv2.medianBlur(small, window)
+    return cv2.resize(small, (w, h), interpolation=cv2.INTER_LINEAR)
+
+
+def find_blobs(
+    region: np.ndarray,
+    min_w: int = 10,
+    max_w: int = 120,
+    min_h: int = 12,
+    max_h: int = 140,
+    min_area: int = 90,
+    min_fill: float = 0.14,
+    drop_clipped: bool = True,
+) -> List[Blob]:
+    """Everything in the region that isn't the terrain it's standing on.
+
+    Recognising a creature by appearance doesn't work: it turns, it animates, and
+    it shrinks with distance, so neither templates nor colour histograms can tell
+    one from a cactus — measured on this game, both overlap rather than separate.
+    Separating *objects* from *terrain* is easy by comparison, because terrain is
+    smooth and low-contrast: a wide median blur estimates it, and anything that
+    differs from that estimate is a thing standing on it.
+
+    This deliberately says only where things are. Deciding which of them are worth
+    clicking is somebody else's job.
+
+    Blobs flush against the region's own edge are dropped by default. The
+    interface panels sit outside the hunting ground and get sliced by it, and
+    what survives is a rectangle of the right size and fill that passes every
+    other test — measured, a dozen of them per frame, each costing a hover.
+    """
+    if region is None or region.size == 0:
+        return []
+    height, width = region.shape[:2]
+    delta = cv2.absdiff(region, _terrain(region))
+    if delta.ndim == 3:
+        delta = delta.max(axis=2)
+
+    mask = cv2.threshold(delta, _BLOB_DELTA, 255, cv2.THRESH_BINARY)[1]
+    # Close first to pull a sprite's separately-lit parts into one shape, then open
+    # to drop the speckle that survives from terrain detail.
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+
+    count, _, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+    blobs = []
+    for index in range(1, count):
+        x, y, w, h, area = (int(v) for v in stats[index][:5])
+        if not (min_w <= w <= max_w and min_h <= h <= max_h and area >= min_area):
+            continue
+        if area / float(w * h) < min_fill:
+            continue  # a sparse box is a scatter of terrain detail, not one object
+        if drop_clipped and (x <= _BLOB_EDGE or y <= _BLOB_EDGE
+                             or x + w >= width - _BLOB_EDGE
+                             or y + h >= height - _BLOB_EDGE):
+            continue  # cut off by the edge, so its real shape is anyone's guess
+        blobs.append(Blob(x, y, w, h, area))
+    return blobs
+
+
+def self_radius(client_h: int) -> int:
+    """How far from the middle of the view still counts as our own character.
+
+    Half a sprite: measured about 90 px tall in a 900 px client, and it scales
+    with the window because the game draws the scene to fit.
+    """
+    return max(12, int(client_h * 0.055))
+
+
+def split_self(blobs: List[Blob], centre: Tuple[int, int],
+               radius: int) -> Tuple[List[Blob], List[Blob]]:
+    """Separate the player's own character from everything else it found.
+
+    The camera rides on the character, so it is always drawn at the middle of the
+    view. That makes it the nearest blob of all and therefore the first one any
+    nearest-first search would reach — the very last thing you want clicked.
+
+    The test is proximity rather than "the blob containing the middle", because
+    what the character detects as is not stable. When the terrain estimate used a
+    window narrower than the sprite, a large flat-coloured character was judged
+    to be its own background and came back as four corner fragments with a hole
+    where the middle was — not one of them containing the centre point, and all
+    four sorting ahead of any real monster. Anything centred within a sprite's
+    reach of the middle is us, which holds however the sprite happens to break up.
+    """
+    mine, others = [], []
+    cx, cy = centre
+    for blob in blobs:
+        near = (blob.center[0] - cx) ** 2 + (blob.center[1] - cy) ** 2 <= radius ** 2
+        (mine if near else others).append(blob)
+    return others, mine
 
 
 def bar_fill_fraction(region: np.ndarray, rgb: Sequence[int], tolerance: int) -> float:
