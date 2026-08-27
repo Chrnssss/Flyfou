@@ -116,6 +116,38 @@ def window_title(hwnd: int) -> str:
         return ""
 
 
+def cursor_hotspot() -> Optional[Tuple[int, int]]:
+    """Which cursor the game is currently showing, identified by its hotspot.
+
+    Games swap the pointer when it's over something you can act on, which makes
+    this the game's own answer to "is that a monster" — far more reliable than
+    guessing from pixels.
+
+    The cursor handle itself can't be used for this. Animated cursors hand back a
+    fresh handle almost every frame, and the values differ by exact multiples of
+    0x10000 — that's the handle recycling counter, not the cursor's identity. The
+    hotspot survives the animation.
+    """
+    try:
+        handle = win32gui.GetCursorInfo()[1]
+        if not handle:
+            return None
+        info = win32gui.GetIconInfo(handle)
+    except Exception:
+        return None
+    try:
+        return int(info[1]), int(info[2])
+    finally:
+        # GetIconInfo hands over two bitmaps it expects the caller to own; probing
+        # runs many times a second, so leaking them would exhaust the GDI pool.
+        for bitmap in (info[3], info[4]):
+            if bitmap:
+                try:
+                    win32gui.DeleteObject(bitmap)
+                except Exception:
+                    pass
+
+
 def describe(hwnd: int) -> Optional[WindowInfo]:
     if not window_exists(hwnd):
         return None

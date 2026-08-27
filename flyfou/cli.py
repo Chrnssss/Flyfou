@@ -70,7 +70,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 
 def _run_headless(store, name: Optional[str]) -> int:
-    from .bot import run_headless
+    from .runner import run_headless
     from .errors import FlyfouError
 
     names = store.names()

@@ -21,9 +21,19 @@ except ImportError:
 
 _MOVE_SETTLE = 0.03
 
+#: Between the two presses of a double click. Long enough that the client sees
+#: two clicks, short enough that it sees them as one gesture.
+_DOUBLE_GAP = 0.06
+
 
 def available() -> bool:
     return pydirectinput is not None
+
+
+def move(x: int, y: int) -> None:
+    """Point at something without touching a button. Safe on its own: in Flyff a
+    click on the ground walks the character, but a hover never does."""
+    pydirectinput.moveTo(x, y)
 
 
 def click(x: int, y: int, button: str = "left") -> None:
@@ -32,6 +42,24 @@ def click(x: int, y: int, button: str = "left") -> None:
     # the same instant as the move is regularly handled at the old position —
     # which shows up as clicks that fail to select the monster under them.
     time.sleep(_MOVE_SETTLE)
+    pydirectinput.click(button=button)
+
+
+def double_click(x: int, y: int, button: str = "left") -> None:
+    """Attack, in one gesture.
+
+    A single click on a monster only selects it; the double is what makes the
+    character go and hit it. Doing it this way rather than click-then-hotkey
+    means nothing depends on which key the character has its attack bound to.
+
+    The two presses are sent separately rather than through a doubleClick
+    helper, because the helper moves the cursor again between them and a moving
+    cursor is how a double click becomes two single clicks on two places.
+    """
+    pydirectinput.moveTo(x, y)
+    time.sleep(_MOVE_SETTLE)
+    pydirectinput.click(button=button)
+    time.sleep(_DOUBLE_GAP)
     pydirectinput.click(button=button)
 
 

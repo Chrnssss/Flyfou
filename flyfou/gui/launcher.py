@@ -13,7 +13,7 @@ from ..profile import Profile, ProfileStore
 from . import imaging, theme
 from .panel import ControlPanel
 from .widgets import Card, Chip
-from .wizard import SetupWizard
+from .setup import SetupWizard
 
 _THUMB = (84, 84)
 _WINDOW_CHECK_MS = 2000
@@ -134,7 +134,8 @@ class Launcher(tk.Tk):
             child.destroy()
         self.summary.configure(
             text="No profiles yet.\n\nPress New… and Flyfou will walk you through pointing it at "
-                 "the game, showing it a monster, and marking the HP bars. It takes a few minutes."
+                 "the game, marking out where you hunt, and marking the HP bars. It takes a few "
+                 "minutes."
         )
         self.fit_chip.set("", "info")
         self.ready_chip.set("Create a profile to get going.", "info")
@@ -149,22 +150,33 @@ class Launcher(tk.Tk):
         for child in self.thumbs.winfo_children():
             child.destroy()
         self._images.clear()
-        for index, ref in enumerate(profile.monsters[:5]):
-            self._thumbnail(profile, ref, f"m{index}", "Monster")
         if profile.home:
             self._thumbnail(profile, profile.home, "home", "Home")
-        if not profile.monsters and not profile.home:
-            ttk.Label(self.thumbs, text="Nothing captured yet.", style="PanelMuted.TLabel").pack(anchor="w")
+        else:
+            ttk.Label(self.thumbs, style="PanelMuted.TLabel", wraplength=420, justify="left",
+                      text="No home landmark, so it wanders around its hunting ground rather "
+                           "than returning to a fixed spot.").pack(anchor="w")
 
-        keys = [skill.key.upper() for skill in profile.skills]
-        rotation = " → ".join(keys) if keys else "none"
-        attack = profile.attack_key.upper() if profile.attack_key else "click only"
+        attack = profile.attack_key.upper() if profile.attack_key else "not set"
+        levels = ("%d to %d" % profile.levels if profile.levels
+                  else "any level")
+        wanted = (", ".join(profile.monster_names[:4])
+                  if profile.monster_names else "anything not a player or pet")
+        roam = ("%g units from the start" % profile.farm_radius
+                if profile.farm_radius else "no limit")
+        guards = []
+        if profile.avoid_killsteal:
+            guards.append("leaves other people's monsters")
+        if profile.self_defence:
+            guards.append("hits back")
+        if profile.protect:
+            guards.append("defends " + profile.protect)
         lines = [
             f"Game window:  {profile.window_title or profile.window_process or 'not set'}",
-            f"Captured at:  {_size_text(profile.client_size)}",
-            f"Match threshold:  {profile.match_threshold:.2f}",
-            f"Attack:  {attack}    Skills:  {rotation}",
-            f"Pause below:  {profile.critical_fraction:.0%} HP",
+            f"Attacks:  {wanted}",
+            f"Levels:  {levels}    Roams:  {roam}",
+            f"Attack key:  {attack}    Rests below:  {profile.rest_below:.0%} HP",
+            f"Also:  {', '.join(guards) if guards else 'nothing special'}",
             f"Created:  {_date_text(profile.created)}",
         ]
         self.summary.configure(text="\n".join(lines))
@@ -183,12 +195,9 @@ class Launcher(tk.Tk):
     def _thumbnail(self, profile: Profile, ref, key: str, caption: str) -> None:
         cell = ttk.Frame(self.thumbs, style="Panel.TFrame")
         cell.pack(side="left", padx=(0, 10))
-        try:
-            image = profile.load_template(ref)
-        except FlyfouError:
-            ttk.Label(cell, text="missing", style="PanelMuted.TLabel",
-                      foreground=theme.BAD).pack()
-            return
+        # Nothing captures pictures any more, so there is nothing to show.
+        ttk.Label(cell, text=caption, style="PanelMuted.TLabel").pack(anchor="w")
+        return
         photo, _scale, size = imaging.fitted_photo(image, _THUMB, allow_upscale=True)
         self._images.set(key, photo)
         canvas = tk.Canvas(cell, width=_THUMB[0], height=_THUMB[1], bg="#101116", bd=0,
@@ -215,7 +224,7 @@ class Launcher(tk.Tk):
                 self.fit_chip.set(
                     f"The game is {_size_text(info.client_size)} now, but this profile was made at "
                     f"{_size_text(profile.client_size)}. Regions will follow the new size; if "
-                    f"matching gets flaky, re-capture the monster.",
+                    f"it starts clicking the interface, re-mark the hunting ground.",
                     "warn",
                 )
             else:

@@ -1,9 +1,9 @@
 # Flyfou
 
 A screen-capture auto-farm bot for Flyff (built and tested against a private
-server client). You show it a monster by dragging a box around it, mark your
-HP bars the same way, press the keys you attack with — and it farms. No config
-files, no terminal, no pixel coordinates.
+server client). You drag a box around the ground you hunt on, mark your HP bars
+the same way, press the keys you attack with — and it farms. No config files,
+no terminal, no pixel coordinates.
 
 It does **not** read game memory, modify game files, or touch the network
 protocol. It only looks at pixels on screen and sends mouse/keyboard input the
@@ -38,8 +38,8 @@ hour into a run.
 | --- | --- |
 | **Name this farm spot** | Something you'll recognise later, e.g. `aibatt-lv30`. |
 | **Pick the game window** | Live thumbnails of every window on screen — click the one showing the game. No typing window titles. The title is remembered, so if you run two clients of the same game it farms in the one you picked. |
-| **Show it the monster** | Freezes a screenshot; drag a box around the monster. Capture two or three facings for better matching. A green box appears over whatever it currently matches, with the score. |
-| **Mark your home landmark** | Optional. A rock, a statue, a building corner — something that doesn't move. Flyfou walks back to it so your character doesn't drift off the spot. |
+| **Mark out the hunting ground** | Drag a box over the part of the screen that's scenery, keeping clear of your bags, the minimap and the skill bar. Flyfou never hovers or clicks outside it. The preview boxes everything it can see in there, with your own character marked separately. |
+| **Mark your home landmark** | Optional. A rock, a statue, a building corner — something that doesn't move. Flyfou walks back to it so your character doesn't drift off the spot. This is the only picture a profile keeps, so the match threshold lives here. |
 | **Mark your own HP bar** | Drag a box around the filled part. The colour is detected automatically from the pixels inside the box; you can override it if it guessed wrong. The percentage updates live while you adjust. |
 | **Mark the target's HP bar** | Click a monster in-game first so the bar exists, then mark it. This is how kills are detected. |
 | **Record your attack rotation** | Press Record, then press your keys in order. Each gets a cooldown spinner. |
@@ -52,6 +52,42 @@ few pixels tall; a magnifier follows the cursor so you can land on the exact
 pixel. The note at the top moves out of the way when you approach it, and **H**
 hides it outright — the target's HP bar is usually drawn right underneath it.
 Esc cancels.
+
+## How it finds a monster
+
+There is no picture of a monster anywhere in a profile, and that's deliberate.
+Matching one by appearance doesn't work: it turns, it animates, and it shrinks
+with distance, so a template captured facing left scores no better on the same
+monster facing right than it does on a cactus. Measured on this client, the two
+distributions overlap rather than separate — which is why the old
+capture-the-monster step was replaced.
+
+What does separate cleanly is **objects from terrain**. Ground is smooth and
+low-contrast, so a wide median blur estimates it, and anything that differs from
+that estimate is a thing standing on it. That gives positions with no identity —
+a monster and a signpost look the same.
+
+The identity comes from the game itself. Flyff swaps the mouse cursor when you
+hover something you can attack, so Flyfou hovers each candidate nearest-first
+and reads the cursor's *hotspot* (the handle is recycled and animated; the
+hotspot is the stable part). Three cursors matter, and all three are learnt at
+run time rather than hard-coded, so a reskin doesn't break it:
+
+- bare ground — sampled from a spot with nothing near it
+- your own character — sampled from the middle of the view, where the camera
+  always puts it
+- anything else — attackable, so click it
+
+Clicking is two clicks, not one. The first selects; the second, on the same
+monster, is what orders the attack — one click alone leaves the character
+standing next to it indefinitely. The monster drifts a few pixels between the
+two, so the second click re-finds it rather than reusing the first position.
+
+Two things follow from this that are worth knowing. The attack **key** is
+optional and largely decorative: hotbar function keys don't respond to synthetic
+input on this client, so the clicks do the work. And if a target's health hasn't
+moved for several seconds, Flyfou drops it and looks for another, because
+out-of-reach and someone-else's-kill both look exactly like a fight from here.
 
 ## The control panel
 
@@ -80,16 +116,15 @@ Unchanged from the original command-line version:
 
 ## When something doesn't work
 
-Flyfou tries to say what to do rather than what went wrong. For example, if it
-can't find the monster it will tell you the best score it actually got, and
-suggest either re-capturing at your current camera zoom or the specific
-threshold that would have matched. The same goes for an HP region that reads
-0% forever, a game window that went fullscreen-exclusive, a window that
-disappeared, and a missing component in the download.
+Flyfou tries to say what to do rather than what went wrong. If it sees plenty of
+things on screen but none of them read as attackable, it says so and points at
+the likely cause — a hunting ground drawn over the interface. The same goes for
+an HP region that reads 0% forever, a game window that went fullscreen-exclusive,
+a window that disappeared, and a missing component in the download.
 
 ## Profiles
 
-Each farm spot is a profile — a monster, a place, a rotation. Switch between
+Each farm spot is a profile — a window, a place, a rotation. Switch between
 them from the dropdown in the main window, and use **Duplicate** to make a
 variant without redoing the whole wizard.
 
@@ -99,10 +134,10 @@ to, and they're easy to back up or share. Set `FLYFOU_HOME` to keep them
 somewhere else.
 
 **Regions are stored as fractions of the game's client area, not as pixels.**
-Change your resolution and everything still lands in the right place; captured
-monster images get rescaled to match. Flyfou warns you when the window size
-differs from when the profile was made, since template matching gets less
-reliable across big jumps and a re-capture is usually worth it.
+Change your resolution and everything still lands in the right place; the home
+landmark gets rescaled to match. Flyfou warns you when the window size differs
+from when the profile was made, since the interface doesn't always reflow
+proportionally and the hunting ground can end up overlapping it.
 
 ## Running from source
 
@@ -151,9 +186,9 @@ topmost `Toplevel` with a `Canvas` handles it fine.
 flyfou/
   bot.py          the farming loop and its state machine — no GUI imports
   profile.py      profiles, fractional geometry, load/save
-  vision.py       template matching, HP bar reading, colour detection
+  vision.py       object-vs-terrain detection, HP bar reading, colour detection
   capture.py      screen grabs
-  winutil.py      window enumeration, client rects, focus, DPI
+  winutil.py      window enumeration, client rects, focus, cursor hotspots, DPI
   inputs.py       clicks and keys the game will accept
   hotkeys.py      global pause/resume/stop
   errors.py       every user-facing message, in one place
@@ -166,7 +201,14 @@ flyfou/
     previews.py   live match and HP previews
     feed.py       background frame grabber for the wizard
     widgets.py, imaging.py, theme.py
+tests/            synthetic checks, no game needed
 build.py          produces dist/Flyfou.exe
+```
+
+```
+python tests\test_logic.py     search, aiming and kill-counting rules
+python tests\test_wizard.py    every setup screen builds and draws
+python tests\test_profile.py   older profiles still load and re-save
 ```
 
 ## Extending
@@ -174,8 +216,12 @@ build.py          produces dist/Flyfou.exe
 The state machine is `Bot._searching` / `_attack` / `_returning` in
 `flyfou/bot.py`, picked between by `Bot._update_engagement`, which reads the
 target's HP bar to decide whether a fight is on — so a monster you target by
-hand counts the same as one the bot clicked. Auto-loot, auto-potion, buff upkeep and multi-spot rotation
-are all reasonable additions and none are included. Anything that needs to act
-goes through `Bot._click` and `Bot._press`, which refuse to do anything unless
-the game window is in the foreground — keep new behaviour behind those and the
-safety guarantees above still hold.
+hand counts the same as one the bot clicked. Deciding *what* to click is split
+between `vision.find_blobs` (where things are) and `Bot._hotspot_at` (which of
+them are monsters); either can be replaced without touching the other.
+
+Auto-loot, auto-potion, buff upkeep and multi-spot rotation are all reasonable
+additions and none are included. Anything that needs to act goes through
+`Bot._click` and `Bot._press`, which refuse to do anything unless the game
+window is in the foreground — keep new behaviour behind those and the safety
+guarantees above still hold.
