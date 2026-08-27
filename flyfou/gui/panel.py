@@ -10,7 +10,8 @@ import tkinter as tk
 from tkinter import ttk
 from typing import Callable, Optional
 
-from .. import bot as botmod
+from .. import runner as botmod
+from .. import report as states
 from .. import errors, inputs
 from ..errors import FlyfouError
 from ..hotkeys import HotkeyManager
@@ -19,12 +20,12 @@ from . import theme
 from .widgets import Card, Chip
 
 _STATE_COLORS = {
-    botmod.SEARCHING: theme.ACCENT,
-    botmod.FIGHTING: theme.GOOD,
-    botmod.RETURNING: theme.WARN,
-    botmod.PAUSED: theme.MUTED,
-    botmod.WAITING: theme.WARN,
-    botmod.STOPPED: theme.MUTED,
+    states.SEARCHING: theme.ACCENT,
+    states.FIGHTING: theme.GOOD,
+    states.RETURNING: theme.WARN,
+    states.PAUSED: theme.MUTED,
+    states.WAITING: theme.WARN,
+    states.STOPPED: theme.MUTED,
 }
 
 _POLL_MS = 150
@@ -68,7 +69,7 @@ class ControlPanel(tk.Toplevel):
 
         head = Card(outer)
         head.pack(fill="x")
-        self.state_label = ttk.Label(head.body, text=botmod.STOPPED, style="Panel.TLabel",
+        self.state_label = ttk.Label(head.body, text=states.STOPPED, style="Panel.TLabel",
                                      font=theme.FONT_TITLE)
         self.state_label.pack(anchor="w")
         self.window_chip = Chip(head.body, "Looking for the game window…", "info", panel=True,
@@ -95,7 +96,7 @@ class ControlPanel(tk.Toplevel):
                                           maximum=100, length=316)
         self.player_bar.pack(fill="x", pady=(4, 0))
 
-        if self.profile.target_hp.configured():
+        if True:        # there is always a target bar now: it is a number
             row2 = ttk.Frame(health.body, style="Panel.TFrame")
             row2.pack(fill="x", pady=(10, 0))
             ttk.Label(row2, text="Target HP", style="PanelMuted.TLabel").pack(side="left")
@@ -202,7 +203,7 @@ class ControlPanel(tk.Toplevel):
             self._append(f"{line.clock}  {line.text}", line.level)
         self._poll_job = self.after(_POLL_MS, self._poll)
 
-    def _render(self, status: botmod.Status) -> None:
+    def _render(self, status: states.Status) -> None:
         self.state_label.configure(text=status.state,
                                    foreground=_STATE_COLORS.get(status.state, theme.FG))
         self.kills_value.configure(text=str(status.kills))
@@ -242,7 +243,7 @@ class ControlPanel(tk.Toplevel):
         label.configure(text=f"{fraction:.0%}")
         bar.configure(value=fraction * 100)
         if colour_coded:
-            critical = self.profile.critical_fraction
+            critical = self.profile.rest_below
             if fraction <= critical:
                 bar.configure(style="Bad.Horizontal.TProgressbar")
             elif fraction <= critical * 2:

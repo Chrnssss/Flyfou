@@ -310,7 +310,7 @@ imported by:
   <a target="code" href="" type="text/plain"><tt>'org.python'</tt></a>
 <span class="moduletype">MissingModule</span>  <div class="import">
 imported by:
-    <a href="#copy">copy</a>
+    <a href="#pickle">pickle</a>
  &#8226;   <a href="#xml.sax">xml.sax</a>
 
   </div>
@@ -2751,23 +2751,30 @@ imported by:
  &#8226;   <a href="#PIL.features">PIL.features</a>
  &#8226;   <a href="#codeop">codeop</a>
  &#8226;   <a href="#doctest">doctest</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
+ &#8226;   <a href="#flyfou.brain">flyfou.brain</a>
  &#8226;   <a href="#flyfou.cli">flyfou.cli</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
  &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
  &#8226;   <a href="#flyfou.gui.imaging">flyfou.gui.imaging</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
  &#8226;   <a href="#flyfou.gui.theme">flyfou.gui.theme</a>
  &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
  &#8226;   <a href="#flyfou.hotkeys">flyfou.hotkeys</a>
  &#8226;   <a href="#flyfou.inputs">flyfou.inputs</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.learn">flyfou.mem.learn</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#flyfou.mem.scan">flyfou.mem.scan</a>
+ &#8226;   <a href="#flyfou.mem.study">flyfou.mem.study</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
+ &#8226;   <a href="#flyfou.screen">flyfou.screen</a>
  &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
  &#8226;   <a href="#keyboard">keyboard</a>
  &#8226;   <a href="#keyboard._canonical_names">keyboard._canonical_names</a>
@@ -5185,7 +5192,8 @@ imported by:
  &#8226;   <a href="#dis">dis</a>
  &#8226;   <a href="#doctest">doctest</a>
  &#8226;   <a href="#email.feedparser">email.feedparser</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
  &#8226;   <a href="#flyfou_app.py">flyfou_app.py</a>
  &#8226;   <a href="#functools">functools</a>
  &#8226;   <a href="#importlib.metadata">importlib.metadata</a>
@@ -5489,8 +5497,8 @@ imported by:
   <a target="code" href="///C:/Users/Anira/AppData/Local/Programs/Python/Python39/lib/copy.py" type="text/plain"><tt>copy</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
-    <a href="#'org.python'">'org.python'</a>
- &#8226;   <a href="#copyreg">copyreg</a>
+    <a href="#copyreg">copyreg</a>
+ &#8226;   <a href="#org">org</a>
  &#8226;   <a href="#types">types</a>
  &#8226;   <a href="#weakref">weakref</a>
 
@@ -5582,6 +5590,7 @@ imported by:
  &#8226;   <a href="#ctypes.macholib">ctypes.macholib</a>
  &#8226;   <a href="#ctypes.util">ctypes.util</a>
  &#8226;   <a href="#ctypes.wintypes">ctypes.wintypes</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
  &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
  &#8226;   <a href="#keyboard._darwinkeyboard">keyboard._darwinkeyboard</a>
  &#8226;   <a href="#keyboard._winkeyboard">keyboard._winkeyboard</a>
@@ -5752,7 +5761,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#flyfou.winutil">flyfou.winutil</a>
+    <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
  &#8226;   <a href="#keyboard._winkeyboard">keyboard._winkeyboard</a>
  &#8226;   <a href="#mss.windows.gdi">mss.windows.gdi</a>
 
@@ -5802,7 +5812,6 @@ imported by:
  &#8226;   <a href="#cv2.utils">cv2.utils</a>
  &#8226;   <a href="#cv2.version">cv2.version</a>
  &#8226;   <a href="#flyfou.gui.imaging">flyfou.gui.imaging</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
 
   </div>
 
@@ -6035,12 +6044,19 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#flyfou.bot">flyfou.bot</a>
+    <a href="#flyfou.brain">flyfou.brain</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
  &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.learn">flyfou.mem.learn</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#flyfou.mem.study">flyfou.mem.study</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
+ &#8226;   <a href="#flyfou.screen">flyfou.screen</a>
  &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
 
   </div>
@@ -6067,6 +6083,7 @@ imported by:
  &#8226;   <a href="#calendar">calendar</a>
  &#8226;   <a href="#email.utils">email.utils</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#http.server">http.server</a>
@@ -9263,33 +9280,32 @@ imported by:
 <span class="moduletype">Package</span>  <div class="import">
 imports:
     <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
  &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
  &#8226;   <a href="#flyfou.inputs">flyfou.inputs</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
+ &#8226;   <a href="#flyfou.screen">flyfou.screen</a>
  &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
 
   </div>
   <div class="import">
 imported by:
     <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
+ &#8226;   <a href="#flyfou.brain">flyfou.brain</a>
  &#8226;   <a href="#flyfou.cli">flyfou.cli</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
  &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
  &#8226;   <a href="#flyfou.gui">flyfou.gui</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
  &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
  &#8226;   <a href="#flyfou.hotkeys">flyfou.hotkeys</a>
  &#8226;   <a href="#flyfou.inputs">flyfou.inputs</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
+ &#8226;   <a href="#flyfou.screen">flyfou.screen</a>
  &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
 
   </div>
@@ -9297,60 +9313,23 @@ imported by:
 </div>
 
 <div class="node">
-  <a name="flyfou.bot"></a>
-  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/bot.py" type="text/plain"><tt>flyfou.bot</tt></a>
+  <a name="flyfou.brain"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/brain.py" type="text/plain"><tt>flyfou.brain</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#__future__">__future__</a>
- &#8226;   <a href="#collections">collections</a>
  &#8226;   <a href="#dataclasses">dataclasses</a>
  &#8226;   <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
- &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
- &#8226;   <a href="#flyfou.hotkeys">flyfou.hotkeys</a>
- &#8226;   <a href="#flyfou.inputs">flyfou.inputs</a>
- &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
- &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
- &#8226;   <a href="#numpy">numpy</a>
- &#8226;   <a href="#random">random</a>
- &#8226;   <a href="#threading">threading</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+ &#8226;   <a href="#math">math</a>
  &#8226;   <a href="#time">time</a>
  &#8226;   <a href="#typing">typing</a>
 
   </div>
   <div class="import">
 imported by:
-    <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.cli">flyfou.cli</a>
- &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
-
-  </div>
-
-</div>
-
-<div class="node">
-  <a name="flyfou.capture"></a>
-  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/capture.py" type="text/plain"><tt>flyfou.capture</tt></a>
-<span class="moduletype">SourceModule</span>  <div class="import">
-imports:
-    <a href="#__future__">__future__</a>
- &#8226;   <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
- &#8226;   <a href="#mss">mss</a>
- &#8226;   <a href="#numpy">numpy</a>
- &#8226;   <a href="#threading">threading</a>
- &#8226;   <a href="#typing">typing</a>
-
-  </div>
-  <div class="import">
-imported by:
-    <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
+    <a href="#flyfou.profile">flyfou.profile</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
 
   </div>
 
@@ -9364,10 +9343,10 @@ imports:
     <a href="#__future__">__future__</a>
  &#8226;   <a href="#argparse">argparse</a>
  &#8226;   <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
  &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
  &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
  &#8226;   <a href="#sys">sys</a>
  &#8226;   <a href="#tkinter">tkinter</a>
@@ -9378,6 +9357,33 @@ imports:
   <div class="import">
 imported by:
     <a href="#flyfou_app.py">flyfou_app.py</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.control"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/control.py" type="text/plain"><tt>flyfou.control</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#flyfou">flyfou</a>
+ &#8226;   <a href="#flyfou.inputs">flyfou.inputs</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+ &#8226;   <a href="#flyfou.screen">flyfou.screen</a>
+ &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
+ &#8226;   <a href="#math">math</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.runner">flyfou.runner</a>
 
   </div>
 
@@ -9398,13 +9404,11 @@ imports:
   <div class="import">
 imported by:
     <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
  &#8226;   <a href="#flyfou.cli">flyfou.cli</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
 
   </div>
 
@@ -9418,49 +9422,18 @@ imports:
     <a href="#flyfou">flyfou</a>
  &#8226;   <a href="#flyfou.gui">flyfou.gui</a>
  &#8226;   <a href="#flyfou.gui.imaging">flyfou.gui.imaging</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
  &#8226;   <a href="#flyfou.gui.theme">flyfou.gui.theme</a>
 
   </div>
   <div class="import">
 imported by:
     <a href="#flyfou.gui">flyfou.gui</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
  &#8226;   <a href="#flyfou.gui.imaging">flyfou.gui.imaging</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
  &#8226;   <a href="#flyfou.gui.theme">flyfou.gui.theme</a>
  &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
-
-  </div>
-
-</div>
-
-<div class="node">
-  <a name="flyfou.gui.feed"></a>
-  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/gui/feed.py" type="text/plain"><tt>flyfou.gui.feed</tt></a>
-<span class="moduletype">SourceModule</span>  <div class="import">
-imports:
-    <a href="#__future__">__future__</a>
- &#8226;   <a href="#dataclasses">dataclasses</a>
- &#8226;   <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
- &#8226;   <a href="#flyfou.gui">flyfou.gui</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
- &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
- &#8226;   <a href="#numpy">numpy</a>
- &#8226;   <a href="#threading">threading</a>
- &#8226;   <a href="#time">time</a>
- &#8226;   <a href="#typing">typing</a>
-
-  </div>
-  <div class="import">
-imported by:
-    <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
 
   </div>
 
@@ -9485,9 +9458,6 @@ imports:
 imported by:
     <a href="#flyfou.gui">flyfou.gui</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
 
   </div>
 
@@ -9505,9 +9475,9 @@ imports:
  &#8226;   <a href="#flyfou.gui">flyfou.gui</a>
  &#8226;   <a href="#flyfou.gui.imaging">flyfou.gui.imaging</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
  &#8226;   <a href="#flyfou.gui.theme">flyfou.gui.theme</a>
  &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
  &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
  &#8226;   <a href="#tkinter">tkinter</a>
@@ -9532,7 +9502,6 @@ imported by:
 imports:
     <a href="#__future__">__future__</a>
  &#8226;   <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
  &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
  &#8226;   <a href="#flyfou.gui">flyfou.gui</a>
  &#8226;   <a href="#flyfou.gui.theme">flyfou.gui.theme</a>
@@ -9540,6 +9509,8 @@ imports:
  &#8226;   <a href="#flyfou.hotkeys">flyfou.hotkeys</a>
  &#8226;   <a href="#flyfou.inputs">flyfou.inputs</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
  &#8226;   <a href="#tkinter">tkinter</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
  &#8226;   <a href="#typing">typing</a>
@@ -9554,60 +9525,29 @@ imported by:
 </div>
 
 <div class="node">
-  <a name="flyfou.gui.previews"></a>
-  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/gui/previews.py" type="text/plain"><tt>flyfou.gui.previews</tt></a>
+  <a name="flyfou.gui.setup"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/gui/setup.py" type="text/plain"><tt>flyfou.gui.setup</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#__future__">__future__</a>
  &#8226;   <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
  &#8226;   <a href="#flyfou.gui">flyfou.gui</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
- &#8226;   <a href="#flyfou.gui.imaging">flyfou.gui.imaging</a>
  &#8226;   <a href="#flyfou.gui.theme">flyfou.gui.theme</a>
  &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
- &#8226;   <a href="#numpy">numpy</a>
+ &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
  &#8226;   <a href="#tkinter">tkinter</a>
+ &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
  &#8226;   <a href="#typing">typing</a>
+ &#8226;   <a href="#win32process">win32process</a>
 
   </div>
   <div class="import">
 imported by:
-    <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
-
-  </div>
-
-</div>
-
-<div class="node">
-  <a name="flyfou.gui.snip"></a>
-  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/gui/snip.py" type="text/plain"><tt>flyfou.gui.snip</tt></a>
-<span class="moduletype">SourceModule</span>  <div class="import">
-imports:
-    <a href="#__future__">__future__</a>
- &#8226;   <a href="#dataclasses">dataclasses</a>
- &#8226;   <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
- &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
- &#8226;   <a href="#flyfou.gui">flyfou.gui</a>
- &#8226;   <a href="#flyfou.gui.imaging">flyfou.gui.imaging</a>
- &#8226;   <a href="#flyfou.gui.theme">flyfou.gui.theme</a>
- &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
- &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
- &#8226;   <a href="#numpy">numpy</a>
- &#8226;   <a href="#time">time</a>
- &#8226;   <a href="#tkinter">tkinter</a>
- &#8226;   <a href="#typing">typing</a>
-
-  </div>
-  <div class="import">
-imported by:
-    <a href="#flyfou.gui">flyfou.gui</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
+    <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
 
   </div>
 
@@ -9629,10 +9569,8 @@ imported by:
     <a href="#flyfou.gui">flyfou.gui</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
  &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
 
   </div>
 
@@ -9657,48 +9595,7 @@ imports:
 imported by:
     <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
-
-  </div>
-
-</div>
-
-<div class="node">
-  <a name="flyfou.gui.wizard"></a>
-  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/gui/wizard.py" type="text/plain"><tt>flyfou.gui.wizard</tt></a>
-<span class="moduletype">SourceModule</span>  <div class="import">
-imports:
-    <a href="#__future__">__future__</a>
- &#8226;   <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
- &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
- &#8226;   <a href="#flyfou.gui">flyfou.gui</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
- &#8226;   <a href="#flyfou.gui.imaging">flyfou.gui.imaging</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
- &#8226;   <a href="#flyfou.gui.theme">flyfou.gui.theme</a>
- &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
- &#8226;   <a href="#flyfou.inputs">flyfou.inputs</a>
- &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
- &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
- &#8226;   <a href="#numpy">numpy</a>
- &#8226;   <a href="#pathlib">pathlib</a>
- &#8226;   <a href="#shutil">shutil</a>
- &#8226;   <a href="#tempfile">tempfile</a>
- &#8226;   <a href="#time">time</a>
- &#8226;   <a href="#tkinter">tkinter</a>
- &#8226;   <a href="#tkinter.colorchooser">tkinter.colorchooser</a>
- &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
- &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
- &#8226;   <a href="#typing">typing</a>
-
-  </div>
-  <div class="import">
-imported by:
-    <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
 
   </div>
 
@@ -9717,8 +9614,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
+    <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
 
   </div>
 
@@ -9740,10 +9637,254 @@ imports:
   <div class="import">
 imported by:
     <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
  &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.mem"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/mem/__init__.py" type="text/plain"><tt>flyfou.mem</tt></a>
+<span class="moduletype">Package</span>  <div class="import">
+imports:
+    <a href="#flyfou">flyfou</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.learn">flyfou.mem.learn</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#flyfou.mem.scan">flyfou.mem.scan</a>
+ &#8226;   <a href="#flyfou.mem.study">flyfou.mem.study</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.learn">flyfou.mem.learn</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#flyfou.mem.scan">flyfou.mem.scan</a>
+ &#8226;   <a href="#flyfou.mem.study">flyfou.mem.study</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.mem.discover"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/mem/discover.py" type="text/plain"><tt>flyfou.mem.discover</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#collections">collections</a>
+ &#8226;   <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.mem.scan">flyfou.mem.scan</a>
+ &#8226;   <a href="#numpy">numpy</a>
+ &#8226;   <a href="#string">string</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#typing">typing</a>
+ &#8226;   <a href="#warnings">warnings</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.mem">flyfou.mem</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.mem.layout"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/mem/layout.py" type="text/plain"><tt>flyfou.mem.layout</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#pathlib">pathlib</a>
+ &#8226;   <a href="#typing">typing</a>
+ &#8226;   <a href="#yaml">yaml</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.control">flyfou.control</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.mem.learn">flyfou.mem.learn</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.mem.learn"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/mem/learn.py" type="text/plain"><tt>flyfou.mem.learn</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+ &#8226;   <a href="#numpy">numpy</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.mem">flyfou.mem</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.mem.process"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/mem/process.py" type="text/plain"><tt>flyfou.mem.process</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#ctypes">ctypes</a>
+ &#8226;   <a href="#ctypes.wintypes">ctypes.wintypes</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#struct">struct</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.control">flyfou.control</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.learn">flyfou.mem.learn</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#flyfou.mem.scan">flyfou.mem.scan</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+ &#8226;   <a href="#flyfou.screen">flyfou.screen</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.mem.record"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/mem/record.py" type="text/plain"><tt>flyfou.mem.record</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+ &#8226;   <a href="#json">json</a>
+ &#8226;   <a href="#numpy">numpy</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.study">flyfou.mem.study</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.mem.scan"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/mem/scan.py" type="text/plain"><tt>flyfou.mem.scan</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#numpy">numpy</a>
+ &#8226;   <a href="#threading">threading</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.mem.study"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/mem/study.py" type="text/plain"><tt>flyfou.mem.study</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#numpy">numpy</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.mem">flyfou.mem</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.mem.world"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/mem/world.py" type="text/plain"><tt>flyfou.mem.world</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.mem.scan">flyfou.mem.scan</a>
+ &#8226;   <a href="#math">math</a>
+ &#8226;   <a href="#struct">struct</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.brain">flyfou.brain</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.learn">flyfou.mem.learn</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
 
   </div>
 
@@ -9758,8 +9899,8 @@ imports:
  &#8226;   <a href="#dataclasses">dataclasses</a>
  &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#flyfou">flyfou</a>
+ &#8226;   <a href="#flyfou.brain">flyfou.brain</a>
  &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
  &#8226;   <a href="#numpy">numpy</a>
  &#8226;   <a href="#os">os</a>
  &#8226;   <a href="#pathlib">pathlib</a>
@@ -9771,27 +9912,86 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.cli">flyfou.cli</a>
+    <a href="#flyfou.cli">flyfou.cli</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
 
   </div>
 
 </div>
 
 <div class="node">
-  <a name="flyfou.vision"></a>
-  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/vision.py" type="text/plain"><tt>flyfou.vision</tt></a>
+  <a name="flyfou.report"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/report.py" type="text/plain"><tt>flyfou.report</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
     <a href="#__future__">__future__</a>
- &#8226;   <a href="#cv2">cv2</a>
+ &#8226;   <a href="#collections">collections</a>
  &#8226;   <a href="#dataclasses">dataclasses</a>
  &#8226;   <a href="#flyfou">flyfou</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#pathlib">pathlib</a>
+ &#8226;   <a href="#threading">threading</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.runner"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/runner.py" type="text/plain"><tt>flyfou.runner</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#flyfou">flyfou</a>
+ &#8226;   <a href="#flyfou.brain">flyfou.brain</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
+ &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
+ &#8226;   <a href="#flyfou.hotkeys">flyfou.hotkeys</a>
+ &#8226;   <a href="#flyfou.inputs">flyfou.inputs</a>
+ &#8226;   <a href="#flyfou.mem">flyfou.mem</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
+ &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
+ &#8226;   <a href="#math">math</a>
+ &#8226;   <a href="#random">random</a>
+ &#8226;   <a href="#threading">threading</a>
+ &#8226;   <a href="#time">time</a>
+ &#8226;   <a href="#traceback">traceback</a>
+ &#8226;   <a href="#typing">typing</a>
+ &#8226;   <a href="#win32process">win32process</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#flyfou">flyfou</a>
+ &#8226;   <a href="#flyfou.cli">flyfou.cli</a>
+ &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="flyfou.screen"></a>
+  <a target="code" href="///C:/Users/Anira/Desktop/Projects/Flyfou/flyfou/screen.py" type="text/plain"><tt>flyfou.screen</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#dataclasses">dataclasses</a>
+ &#8226;   <a href="#flyfou">flyfou</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#math">math</a>
  &#8226;   <a href="#numpy">numpy</a>
  &#8226;   <a href="#typing">typing</a>
 
@@ -9799,12 +9999,7 @@ imports:
   <div class="import">
 imported by:
     <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
- &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
 
   </div>
 
@@ -9831,13 +10026,11 @@ imports:
   <div class="import">
 imported by:
     <a href="#flyfou">flyfou</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
  &#8226;   <a href="#flyfou.cli">flyfou.cli</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
 
   </div>
 
@@ -10812,7 +11005,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#json.decoder">json.decoder</a>
+    <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#json.decoder">json.decoder</a>
  &#8226;   <a href="#json.encoder">json.encoder</a>
  &#8226;   <a href="#json.scanner">json.scanner</a>
  &#8226;   <a href="#keyboard._keyboard_event">keyboard._keyboard_event</a>
@@ -11251,6 +11445,11 @@ imported by:
  &#8226;   <a href="#_pydecimal">_pydecimal</a>
  &#8226;   <a href="#asyncio.windows_events">asyncio.windows_events</a>
  &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#flyfou.brain">flyfou.brain</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
+ &#8226;   <a href="#flyfou.screen">flyfou.screen</a>
  &#8226;   <a href="#fractions">fractions</a>
  &#8226;   <a href="#numpy._core._machar">numpy._core._machar</a>
  &#8226;   <a href="#numpy._core.numeric">numpy._core.numeric</a>
@@ -11315,8 +11514,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#flyfou.capture">flyfou.capture</a>
- &#8226;   <a href="#mss.base">mss.base</a>
+    <a href="#mss.base">mss.base</a>
  &#8226;   <a href="#mss.darwin">mss.darwin</a>
  &#8226;   <a href="#mss.exception">mss.exception</a>
  &#8226;   <a href="#mss.factory">mss.factory</a>
@@ -12915,15 +13113,14 @@ imported by:
     <a href="#cv2">cv2</a>
  &#8226;   <a href="#cv2.mat_wrapper">cv2.mat_wrapper</a>
  &#8226;   <a href="#cv2.typing">cv2.typing</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
  &#8226;   <a href="#flyfou.gui.imaging">flyfou.gui.imaging</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.mem.learn">flyfou.mem.learn</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#flyfou.mem.scan">flyfou.mem.scan</a>
+ &#8226;   <a href="#flyfou.mem.study">flyfou.mem.study</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
+ &#8226;   <a href="#flyfou.screen">flyfou.screen</a>
  &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
  &#8226;   <a href="#numpy">numpy</a>
  &#8226;   <a href="#numpy.__config__">numpy.__config__</a>
@@ -19300,7 +19497,7 @@ imported by:
   <a target="code" href="" type="text/plain"><tt>org</tt></a>
 <span class="moduletype">MissingModule</span>  <div class="import">
 imported by:
-    <a href="#pickle">pickle</a>
+    <a href="#copy">copy</a>
 
   </div>
 
@@ -19377,7 +19574,9 @@ imported by:
  &#8226;   <a href="#doctest">doctest</a>
  &#8226;   <a href="#email.utils">email.utils</a>
  &#8226;   <a href="#fileinput">fileinput</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
  &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
  &#8226;   <a href="#flyfou_app.py">flyfou_app.py</a>
  &#8226;   <a href="#fnmatch">fnmatch</a>
@@ -19532,8 +19731,9 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
+    <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
  &#8226;   <a href="#importlib.metadata">importlib.metadata</a>
  &#8226;   <a href="#mss.tools">mss.tools</a>
  &#8226;   <a href="#numpy">numpy</a>
@@ -19601,14 +19801,14 @@ imported by:
   <a target="code" href="///C:/Users/Anira/AppData/Local/Programs/Python/Python39/lib/pickle.py" type="text/plain"><tt>pickle</tt></a>
 <span class="moduletype">SourceModule</span>  <div class="import">
 imports:
-    <a href="#_compat_pickle">_compat_pickle</a>
+    <a href="#'org.python'">'org.python'</a>
+ &#8226;   <a href="#_compat_pickle">_compat_pickle</a>
  &#8226;   <a href="#_pickle">_pickle</a>
  &#8226;   <a href="#codecs">codecs</a>
  &#8226;   <a href="#copyreg">copyreg</a>
  &#8226;   <a href="#functools">functools</a>
  &#8226;   <a href="#io">io</a>
  &#8226;   <a href="#itertools">itertools</a>
- &#8226;   <a href="#org">org</a>
  &#8226;   <a href="#pprint">pprint</a>
  &#8226;   <a href="#re">re</a>
  &#8226;   <a href="#struct">struct</a>
@@ -20017,7 +20217,7 @@ imported by:
     <a href="#PIL.ImagePalette">PIL.ImagePalette</a>
  &#8226;   <a href="#email.generator">email.generator</a>
  &#8226;   <a href="#email.utils">email.utils</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
  &#8226;   <a href="#secrets">secrets</a>
  &#8226;   <a href="#statistics">statistics</a>
  &#8226;   <a href="#tempfile">tempfile</a>
@@ -20329,7 +20529,6 @@ imported by:
  &#8226;   <a href="#PIL.ImageShow">PIL.ImageShow</a>
  &#8226;   <a href="#argparse">argparse</a>
  &#8226;   <a href="#ctypes.util">ctypes.util</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
  &#8226;   <a href="#http.server">http.server</a>
  &#8226;   <a href="#multiprocessing.util">multiprocessing.util</a>
@@ -20600,6 +20799,7 @@ imported by:
  &#8226;   <a href="#email._encoded_words">email._encoded_words</a>
  &#8226;   <a href="#email._header_value_parser">email._header_value_parser</a>
  &#8226;   <a href="#email.quoprimime">email.quoprimime</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
  &#8226;   <a href="#logging">logging</a>
  &#8226;   <a href="#ntpath">ntpath</a>
  &#8226;   <a href="#nturl2path">nturl2path</a>
@@ -20657,6 +20857,8 @@ imported by:
  &#8226;   <a href="#base64">base64</a>
  &#8226;   <a href="#ctypes">ctypes</a>
  &#8226;   <a href="#ctypes.util">ctypes.util</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
  &#8226;   <a href="#gettext">gettext</a>
  &#8226;   <a href="#gzip">gzip</a>
  &#8226;   <a href="#keyboard._nixcommon">keyboard._nixcommon</a>
@@ -21003,7 +21205,6 @@ imported by:
  &#8226;   <a href="#PIL.JpegImagePlugin">PIL.JpegImagePlugin</a>
  &#8226;   <a href="#asyncio.windows_utils">asyncio.windows_utils</a>
  &#8226;   <a href="#ctypes.util">ctypes.util</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
  &#8226;   <a href="#multiprocessing.connection">multiprocessing.connection</a>
  &#8226;   <a href="#multiprocessing.heap">multiprocessing.heap</a>
  &#8226;   <a href="#multiprocessing.synchronize">multiprocessing.synchronize</a>
@@ -21084,9 +21285,9 @@ imported by:
  &#8226;   <a href="#concurrent.futures._base">concurrent.futures._base</a>
  &#8226;   <a href="#concurrent.futures.process">concurrent.futures.process</a>
  &#8226;   <a href="#concurrent.futures.thread">concurrent.futures.thread</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
+ &#8226;   <a href="#flyfou.mem.scan">flyfou.mem.scan</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#keyboard">keyboard</a>
  &#8226;   <a href="#keyboard._darwinkeyboard">keyboard._darwinkeyboard</a>
@@ -21152,11 +21353,16 @@ imported by:
  &#8226;   <a href="#email._parseaddr">email._parseaddr</a>
  &#8226;   <a href="#email.generator">email.generator</a>
  &#8226;   <a href="#email.utils">email.utils</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
+ &#8226;   <a href="#flyfou.brain">flyfou.brain</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
  &#8226;   <a href="#flyfou.inputs">flyfou.inputs</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.mem.learn">flyfou.mem.learn</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#flyfou.mem.scan">flyfou.mem.scan</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
  &#8226;   <a href="#gc">gc</a>
  &#8226;   <a href="#gzip">gzip</a>
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
@@ -21204,7 +21410,6 @@ imports:
  &#8226;   <a href="#os">os</a>
  &#8226;   <a href="#re">re</a>
  &#8226;   <a href="#sys">sys</a>
- &#8226;   <a href="#tkinter.colorchooser">tkinter.colorchooser</a>
  &#8226;   <a href="#tkinter.constants">tkinter.constants</a>
  &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
  &#8226;   <a href="#tkinter.simpledialog">tkinter.simpledialog</a>
@@ -21218,35 +21423,14 @@ imported by:
     <a href="#flyfou.cli">flyfou.cli</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
  &#8226;   <a href="#flyfou.gui.theme">flyfou.gui.theme</a>
  &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
- &#8226;   <a href="#tkinter.colorchooser">tkinter.colorchooser</a>
  &#8226;   <a href="#tkinter.commondialog">tkinter.commondialog</a>
  &#8226;   <a href="#tkinter.constants">tkinter.constants</a>
  &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
  &#8226;   <a href="#tkinter.simpledialog">tkinter.simpledialog</a>
  &#8226;   <a href="#tkinter.ttk">tkinter.ttk</a>
-
-  </div>
-
-</div>
-
-<div class="node">
-  <a name="tkinter.colorchooser"></a>
-  <a target="code" href="///C:/Users/Anira/AppData/Local/Programs/Python/Python39/lib/tkinter/colorchooser.py" type="text/plain"><tt>tkinter.colorchooser</tt></a>
-<span class="moduletype">SourceModule</span>  <div class="import">
-imports:
-    <a href="#tkinter">tkinter</a>
- &#8226;   <a href="#tkinter.commondialog">tkinter.commondialog</a>
-
-  </div>
-  <div class="import">
-imported by:
-    <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
- &#8226;   <a href="#tkinter">tkinter</a>
 
   </div>
 
@@ -21262,8 +21446,7 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#tkinter.colorchooser">tkinter.colorchooser</a>
- &#8226;   <a href="#tkinter.messagebox">tkinter.messagebox</a>
+    <a href="#tkinter.messagebox">tkinter.messagebox</a>
 
   </div>
 
@@ -21298,7 +21481,7 @@ imports:
 imported by:
     <a href="#flyfou.cli">flyfou.cli</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
  &#8226;   <a href="#tkinter">tkinter</a>
  &#8226;   <a href="#tkinter.simpledialog">tkinter.simpledialog</a>
 
@@ -21337,10 +21520,9 @@ imports:
 imported by:
     <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
  &#8226;   <a href="#flyfou.gui.theme">flyfou.gui.theme</a>
  &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
  &#8226;   <a href="#tkinter">tkinter</a>
 
   </div>
@@ -21408,6 +21590,7 @@ imported by:
  &#8226;   <a href="#code">code</a>
  &#8226;   <a href="#concurrent.futures.process">concurrent.futures.process</a>
  &#8226;   <a href="#doctest">doctest</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
  &#8226;   <a href="#flyfou_app.py">flyfou_app.py</a>
  &#8226;   <a href="#http.cookiejar">http.cookiejar</a>
  &#8226;   <a href="#keyboard._generic">keyboard._generic</a>
@@ -21616,22 +21799,29 @@ imported by:
  &#8226;   <a href="#asyncio.staggered">asyncio.staggered</a>
  &#8226;   <a href="#cv2.mat_wrapper">cv2.mat_wrapper</a>
  &#8226;   <a href="#cv2.typing">cv2.typing</a>
- &#8226;   <a href="#flyfou.bot">flyfou.bot</a>
- &#8226;   <a href="#flyfou.capture">flyfou.capture</a>
+ &#8226;   <a href="#flyfou.brain">flyfou.brain</a>
  &#8226;   <a href="#flyfou.cli">flyfou.cli</a>
+ &#8226;   <a href="#flyfou.control">flyfou.control</a>
  &#8226;   <a href="#flyfou.errors">flyfou.errors</a>
- &#8226;   <a href="#flyfou.gui.feed">flyfou.gui.feed</a>
  &#8226;   <a href="#flyfou.gui.imaging">flyfou.gui.imaging</a>
  &#8226;   <a href="#flyfou.gui.launcher">flyfou.gui.launcher</a>
  &#8226;   <a href="#flyfou.gui.panel">flyfou.gui.panel</a>
- &#8226;   <a href="#flyfou.gui.previews">flyfou.gui.previews</a>
- &#8226;   <a href="#flyfou.gui.snip">flyfou.gui.snip</a>
+ &#8226;   <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
  &#8226;   <a href="#flyfou.gui.widgets">flyfou.gui.widgets</a>
- &#8226;   <a href="#flyfou.gui.wizard">flyfou.gui.wizard</a>
  &#8226;   <a href="#flyfou.hotkeys">flyfou.hotkeys</a>
  &#8226;   <a href="#flyfou.inputs">flyfou.inputs</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
+ &#8226;   <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.mem.learn">flyfou.mem.learn</a>
+ &#8226;   <a href="#flyfou.mem.process">flyfou.mem.process</a>
+ &#8226;   <a href="#flyfou.mem.record">flyfou.mem.record</a>
+ &#8226;   <a href="#flyfou.mem.scan">flyfou.mem.scan</a>
+ &#8226;   <a href="#flyfou.mem.study">flyfou.mem.study</a>
+ &#8226;   <a href="#flyfou.mem.world">flyfou.mem.world</a>
  &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
- &#8226;   <a href="#flyfou.vision">flyfou.vision</a>
+ &#8226;   <a href="#flyfou.report">flyfou.report</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
+ &#8226;   <a href="#flyfou.screen">flyfou.screen</a>
  &#8226;   <a href="#flyfou.winutil">flyfou.winutil</a>
  &#8226;   <a href="#functools">functools</a>
  &#8226;   <a href="#importlib.abc">importlib.abc</a>
@@ -22178,6 +22368,7 @@ imported by:
  &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#enum">enum</a>
  &#8226;   <a href="#fileinput">fileinput</a>
+ &#8226;   <a href="#flyfou.mem.discover">flyfou.mem.discover</a>
  &#8226;   <a href="#flyfou_app.py">flyfou_app.py</a>
  &#8226;   <a href="#ftplib">ftplib</a>
  &#8226;   <a href="#getpass">getpass</a>
@@ -22364,6 +22555,17 @@ imported by:
   <tt>win32pdh</tt> <span class="moduletype"><tt>C:\Users\Anira\Desktop\Projects\Flyfou\.venv\lib\site-packages\win32\win32pdh.pyd</tt></span>  <div class="import">
 imported by:
     <a href="#numpy.testing._private.utils">numpy.testing._private.utils</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="win32process"></a>
+  <tt>win32process</tt> <span class="moduletype"><tt>C:\Users\Anira\Desktop\Projects\Flyfou\.venv\lib\site-packages\win32\win32process.pyd</tt></span>  <div class="import">
+imported by:
+    <a href="#flyfou.gui.setup">flyfou.gui.setup</a>
+ &#8226;   <a href="#flyfou.runner">flyfou.runner</a>
 
   </div>
 
@@ -22763,7 +22965,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#flyfou.profile">flyfou.profile</a>
+    <a href="#flyfou.mem.layout">flyfou.mem.layout</a>
+ &#8226;   <a href="#flyfou.profile">flyfou.profile</a>
  &#8226;   <a href="#numpy.__config__">numpy.__config__</a>
  &#8226;   <a href="#yaml._yaml">yaml._yaml</a>
  &#8226;   <a href="#yaml.composer">yaml.composer</a>

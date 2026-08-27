@@ -5,3 +5,11 @@
 /build
 __pycache__/
 *.pyc
+
+# One-off memory probes and the scratch they leave behind. Kept out of the
+# repository but not deleted: each one records why a rule in flyfou/mem is the
+# way it is, and several of them exist because an earlier rule was wrong.
+/probes
+_*.png
+_*.npz
+_scratch_home/

@@ -22,10 +22,9 @@ except ImportError:
 
 import numpy as np
 
-from . import vision
 from .errors import FlyfouError
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 PROFILE_FILE = "profile.yaml"
 
 
@@ -191,9 +190,52 @@ class Profile:
     post_click_delay: Tuple[float, float] = (0.15, 0.35)
     post_key_delay: Tuple[float, float] = (0.05, 0.15)
 
+    # ---- the memory era --------------------------------------------------
+    # Farming is no longer described in fractions of a window, because the bot
+    # no longer looks at one. A radius is world units, a route is world
+    # positions, and a monster is chosen by what it is rather than by how its
+    # nameplate happened to render.
+    levels: Optional[Tuple[int, int]] = None       # inclusive, or any level
+    monster_names: List[str] = field(default_factory=list)   # empty means any
+    monster_kinds: List[int] = field(default_factory=list)   # empty means "not
+                                                             # a player or pet"
+    farm_radius: float = 0.0                       # world units, 0 = unlimited
+    origin: Optional[Tuple[float, float, float]] = None      # None = where we
+                                                             # start
+    route: List[Tuple[float, float, float]] = field(default_factory=list)
+    protect: str = ""                              # character to defend
+    avoid_killsteal: bool = True
+    self_defence: bool = True
+    rest_below: float = 0.35
+
     hotkeys: Hotkeys = field(default_factory=Hotkeys)
     created: str = ""
     directory: Optional[Path] = None  # not serialised
+
+    # ---- what the brain reads --------------------------------------------
+
+    def rules(self):
+        """The profile as the decision layer wants it.
+
+        Kept as a translation rather than as the same object because the brain
+        must not import YAML, tkinter, or anything that can fail: it is the one
+        part of the bot that is pure enough to test exhaustively, and it stays
+        that way by not knowing where its settings came from.
+        """
+        from .brain import Rules
+        return Rules(
+            levels=tuple(self.levels) if self.levels else None,
+            names=set(self.monster_names),
+            monster_kinds=set(self.monster_kinds),
+            radius=float(self.farm_radius),
+            origin=tuple(self.origin) if self.origin else None,
+            route=[tuple(spot) for spot in self.route],
+            protect=self.protect,
+            avoid_killsteal=bool(self.avoid_killsteal),
+            self_defence=bool(self.self_defence),
+            rest_below=float(self.rest_below),
+            attack_key=self.attack_key or "1",
+        )
 
     # ---- serialisation --------------------------------------------------- #
 
@@ -230,6 +272,18 @@ class Profile:
                 "post_click_delay": list(self.post_click_delay),
                 "post_key_delay": list(self.post_key_delay),
             },
+            "farming": {
+                "levels": list(self.levels) if self.levels else None,
+                "monster_names": list(self.monster_names),
+                "monster_kinds": [int(k) for k in self.monster_kinds],
+                "radius": float(self.farm_radius),
+                "origin": list(self.origin) if self.origin else None,
+                "route": [list(spot) for spot in self.route],
+                "protect": self.protect,
+                "avoid_killsteal": bool(self.avoid_killsteal),
+                "self_defence": bool(self.self_defence),
+                "rest_below": float(self.rest_below),
+            },
             "hotkeys": self.hotkeys.to_dict(),
         }
 
@@ -241,6 +295,7 @@ class Profile:
         combat = data.get("combat") or {}
         movement = data.get("movement") or {}
         timing = data.get("timing") or {}
+        farming = data.get("farming") or {}
         size = window.get("client_size") or [0, 0]
         home = templates.get("home")
 
@@ -265,6 +320,19 @@ class Profile:
             loop_hz=int(timing.get("loop_hz", 8)),
             post_click_delay=tuple(timing.get("post_click_delay", (0.15, 0.35))),
             post_key_delay=tuple(timing.get("post_key_delay", (0.05, 0.15))),
+            levels=(tuple(farming["levels"])
+                    if farming.get("levels") else None),
+            monster_names=[str(n) for n in farming.get("monster_names") or []],
+            monster_kinds=[int(k) for k in farming.get("monster_kinds") or []],
+            farm_radius=float(farming.get("radius", 0.0) or 0.0),
+            origin=(tuple(float(v) for v in farming["origin"])
+                    if farming.get("origin") else None),
+            route=[tuple(float(v) for v in spot)
+                   for spot in farming.get("route") or []],
+            protect=str(farming.get("protect", "")),
+            avoid_killsteal=bool(farming.get("avoid_killsteal", True)),
+            self_defence=bool(farming.get("self_defence", True)),
+            rest_below=float(farming.get("rest_below", 0.35)),
             hotkeys=Hotkeys.from_dict(data.get("hotkeys")),
             created=str(data.get("created", "")),
             directory=directory,
@@ -276,36 +344,35 @@ class Profile:
         base = self.directory or Path(".")
         return base / "templates" / ref.file
 
-    def load_template(self, ref: TemplateRef, scale: float = 1.0) -> np.ndarray:
-        path = self.template_path(ref)
-        image = vision.imread(str(path))
-        if image is None:
-            raise FlyfouError(
-                f"The template image '{ref.file}' is missing from profile '{self.name}'.",
-                "Press Set up for this profile and capture it again.",
-            )
-        return vision.scale_template(image, scale) if scale != 1.0 else image
-
-    def load_home_template(self, scale: float = 1.0) -> Optional[np.ndarray]:
-        return self.load_template(self.home, scale) if self.home else None
-
     # ---- validation ------------------------------------------------------ #
 
     def problems(self) -> List[str]:
-        """Reasons this profile can't farm yet, in plain language."""
+        """Reasons this profile can't farm yet, in plain language.
+
+        There is far less to get wrong than there used to be. Marking out a
+        hunting ground, a health bar and a target bar were three separate ways
+        to set the bot up wrong that no longer exist, because none of those are
+        things anybody has to describe any more - they are read. What is left is
+        a window to attach to and a key to press, and a level range that is not
+        impossible.
+        """
         issues = []
         if not self.window_title and not self.window_process:
             issues.append("No game window picked.")
-        if self.play_area.is_empty():
-            issues.append("No hunting ground marked out, so there's nowhere to look.")
-        if not self.player_hp.configured():
-            issues.append("Your own HP bar hasn't been marked out.")
-        if not self.target_hp.configured():
-            issues.append("The target HP bar hasn't been marked out — kills can't be detected without it.")
-        if not self.skills and not self.attack_key:
-            issues.append("No attack key or skills recorded, so the bot would never attack.")
-        if self.home and not self.template_path(self.home).exists():
-            issues.append(f"The captured image '{self.home.file}' is missing from disk.")
+        if not self.attack_key and not self.skills:
+            issues.append("No attack key recorded, so the bot would never "
+                          "attack anything.")
+        if not self.levels and not self.monster_names and not self.monster_kinds:
+            issues.append("No level range and no monster names. This client "
+                          "files pets and wild monsters under the same kind, so "
+                          "without one of those the bot cannot tell a monster "
+                          "from somebody's pet.")
+        if self.levels and self.levels[0] > self.levels[1]:
+            issues.append("The level range runs backwards, so nothing can ever "
+                          "fall inside it.")
+        if self.farm_radius and self.farm_radius < 5:
+            issues.append("The farming radius is smaller than a monster, so "
+                          "there would be nothing inside it.")
         return issues
 
     def scale_for(self, client_w: int, client_h: int) -> float:

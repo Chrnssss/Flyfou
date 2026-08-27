@@ -13,7 +13,7 @@ from ..profile import Profile, ProfileStore
 from . import imaging, theme
 from .panel import ControlPanel
 from .widgets import Card, Chip
-from .wizard import SetupWizard
+from .setup import SetupWizard
 
 _THUMB = (84, 84)
 _WINDOW_CHECK_MS = 2000
@@ -157,20 +157,26 @@ class Launcher(tk.Tk):
                       text="No home landmark, so it wanders around its hunting ground rather "
                            "than returning to a fixed spot.").pack(anchor="w")
 
-        keys = [skill.key.upper() for skill in profile.skills]
-        rotation = " → ".join(keys) if keys else "none"
-        attack = profile.attack_key.upper() if profile.attack_key else "click only"
-        if profile.play_area.is_empty():
-            ground = "not marked out"
-        else:
-            gx, gy, gw, gh = profile.play_area.to_pixels(*(profile.client_size or (1, 1)))
-            ground = f"{gw}×{gh} px at {gx}, {gy}"
+        attack = profile.attack_key.upper() if profile.attack_key else "not set"
+        levels = ("%d to %d" % profile.levels if profile.levels
+                  else "any level")
+        wanted = (", ".join(profile.monster_names[:4])
+                  if profile.monster_names else "anything not a player or pet")
+        roam = ("%g units from the start" % profile.farm_radius
+                if profile.farm_radius else "no limit")
+        guards = []
+        if profile.avoid_killsteal:
+            guards.append("leaves other people's monsters")
+        if profile.self_defence:
+            guards.append("hits back")
+        if profile.protect:
+            guards.append("defends " + profile.protect)
         lines = [
             f"Game window:  {profile.window_title or profile.window_process or 'not set'}",
-            f"Captured at:  {_size_text(profile.client_size)}",
-            f"Hunting ground:  {ground}",
-            f"Attack:  {attack}    Skills:  {rotation}",
-            f"Pause below:  {profile.critical_fraction:.0%} HP",
+            f"Attacks:  {wanted}",
+            f"Levels:  {levels}    Roams:  {roam}",
+            f"Attack key:  {attack}    Rests below:  {profile.rest_below:.0%} HP",
+            f"Also:  {', '.join(guards) if guards else 'nothing special'}",
             f"Created:  {_date_text(profile.created)}",
         ]
         self.summary.configure(text="\n".join(lines))
@@ -189,12 +195,9 @@ class Launcher(tk.Tk):
     def _thumbnail(self, profile: Profile, ref, key: str, caption: str) -> None:
         cell = ttk.Frame(self.thumbs, style="Panel.TFrame")
         cell.pack(side="left", padx=(0, 10))
-        try:
-            image = profile.load_template(ref)
-        except FlyfouError:
-            ttk.Label(cell, text="missing", style="PanelMuted.TLabel",
-                      foreground=theme.BAD).pack()
-            return
+        # Nothing captures pictures any more, so there is nothing to show.
+        ttk.Label(cell, text=caption, style="PanelMuted.TLabel").pack(anchor="w")
+        return
         photo, _scale, size = imaging.fitted_photo(image, _THUMB, allow_upscale=True)
         self._images.set(key, photo)
         canvas = tk.Canvas(cell, width=_THUMB[0], height=_THUMB[1], bg="#101116", bd=0,
