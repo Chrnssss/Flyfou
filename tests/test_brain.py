@@ -276,9 +276,23 @@ check("and it is not picked straight back up", plan.do, IDLE)
 print("\nit stops fighting when its own health is low")
 
 hurt = being(1, "Mynuthyj", kind=PLAYER, hp=5000, max_hp=40000)
-plan = choose(world_of(being(10, "Aibatt", x=1), me=hurt), FARM, Memory())
+memory = Memory()
+plan = choose(world_of(being(10, "Aibatt", x=1), me=hurt), FARM, memory)
 check("low health outranks a monster in reach", plan.do, REST)
 check("and it says the numbers", "5000 of 40000" in plan.why, True)
+check("it has sat down", memory.resting, True)
+
+# Resting is sticky. Getting back to just over the stopping point is not
+# getting better; it is the same fight one hit from the same result.
+mending = being(1, "Mynuthyj", kind=PLAYER, hp=15000, max_hp=40000)
+plan = choose(world_of(being(10, "Aibatt", x=1), me=mending), FARM, memory)
+check("just over the threshold is not recovered", plan.do, REST)
+check("and it says what it is waiting for", "waiting for" in plan.why, True)
+
+well = being(1, "Mynuthyj", kind=PLAYER, hp=33000, max_hp=40000)
+plan = choose(world_of(being(10, "Aibatt", x=1), me=well), FARM, memory)
+check("properly recovered, it fights again", plan.do, ATTACK)
+check("and it is back on its feet", memory.resting, False)
 
 
 # --------------------------------------------------------------------------- #

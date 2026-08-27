@@ -208,14 +208,28 @@ class SetupWizard(tk.Toplevel):
                   style="Panel.TLabel", font=theme.FONT_SMALL).grid(
                       row=1, column=2, sticky="w")
 
-        ttk.Label(grid, text="Rest below", style="Panel.TLabel").grid(
+        ttk.Label(grid, text="Heal key", style="Panel.TLabel").grid(
             row=2, column=0, sticky="w", pady=3)
-        self.rest_var = tk.StringVar()
-        ttk.Entry(grid, textvariable=self.rest_var, width=6,
-                  font=theme.FONT).grid(row=2, column=1, sticky="w", padx=(10, 0))
-        ttk.Label(grid, text="  percent of your health",
+        self.heal_key = KeyCaptureButton(grid, "")
+        self.heal_key.grid(row=2, column=1, sticky="w", padx=(10, 0))
+        ttk.Label(grid, text="  food or a heal, pressed while resting",
                   style="Panel.TLabel", font=theme.FONT_SMALL).grid(
                       row=2, column=2, sticky="w")
+
+        ttk.Label(grid, text="Rest below", style="Panel.TLabel").grid(
+            row=3, column=0, sticky="w", pady=3)
+        pair = ttk.Frame(grid, style="Panel.TFrame")
+        pair.grid(row=3, column=1, columnspan=2, sticky="w", padx=(10, 0))
+        self.rest_var = tk.StringVar()
+        ttk.Entry(pair, textvariable=self.rest_var, width=5,
+                  font=theme.FONT).pack(side="left")
+        ttk.Label(pair, text="%  and fight again above ",
+                  style="Panel.TLabel", font=theme.FONT_SMALL).pack(side="left")
+        self.well_var = tk.StringVar()
+        ttk.Entry(pair, textvariable=self.well_var, width=5,
+                  font=theme.FONT).pack(side="left")
+        ttk.Label(pair, text="%", style="Panel.TLabel",
+                  font=theme.FONT_SMALL).pack(side="left")
 
         self.killsteal_var = tk.BooleanVar(value=True)
         self.defend_var = tk.BooleanVar(value=True)
@@ -321,6 +335,8 @@ class SetupWizard(tk.Toplevel):
         self.radius_var.set("%g" % (profile.farm_radius or 0))
         self.protect_var.set(profile.protect)
         self.rest_var.set("%g" % round((profile.rest_below or 0.35) * 100))
+        self.well_var.set("%g" % round((profile.fight_above or 0.80) * 100))
+        self.heal_key.set_value(profile.heal_key or "")
         self.attack_key.set_value(profile.attack_key or "1")
         self.killsteal_var.set(bool(profile.avoid_killsteal))
         self.defend_var.set(bool(profile.self_defence))
@@ -350,11 +366,15 @@ class SetupWizard(tk.Toplevel):
             return None, "The radius has to be a number of world units."
         try:
             rest = float(self.rest_var.get() or 35)
+            well = float(self.well_var.get() or 80)
         except ValueError:
-            return None, "The rest threshold has to be a percentage."
-        if not 0 <= rest <= 100:
-            return None, "The rest threshold is a percentage, so 0 to 100."
-        return ((low, high) if low is not None else None, radius, rest), ""
+            return None, "The health thresholds have to be percentages."
+        if not (0 <= rest <= 100 and 0 <= well <= 100):
+            return None, "The health thresholds are percentages, so 0 to 100."
+        if well < rest:
+            return None, ("It would fight on at less health than it stopped at, "
+                          "which means it never really rests.")
+        return ((low, high) if low is not None else None, radius, rest, well), ""
 
     def _save(self) -> None:
         name = self.name_var.get().strip()
@@ -365,7 +385,7 @@ class SetupWizard(tk.Toplevel):
         if complaint:
             self.problem.set(complaint, "bad")
             return
-        levels, radius, rest = parsed
+        levels, radius, rest, well = parsed
 
         index = self.window_box.current()
         if index < 0 or index >= len(self.windows):
@@ -390,6 +410,8 @@ class SetupWizard(tk.Toplevel):
         profile.route = [tuple(spot) for spot in self.route]
         profile.protect = self.protect_var.get().strip()
         profile.rest_below = rest / 100.0
+        profile.fight_above = well / 100.0
+        profile.heal_key = self.heal_key.value or None
         profile.attack_key = self.attack_key.value
         profile.avoid_killsteal = bool(self.killsteal_var.get())
         profile.self_defence = bool(self.defend_var.get())

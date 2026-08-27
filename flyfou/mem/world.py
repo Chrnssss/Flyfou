@@ -148,7 +148,8 @@ class WorldReader:
     """Turns a process and a layout into snapshots, as cheaply as it can."""
 
     def __init__(self, process: Process, module: Module, layout: Layout,
-                 interval: float = 30.0, span: Optional[int] = None):
+                 interval: float = 30.0, span: Optional[int] = None,
+                 resweep: float = 1.0):
         self.process = process
         self.module = module
         self.layout = layout
@@ -160,6 +161,18 @@ class WorldReader:
         #: The best health ever seen per entity, for builds that do not store a
         #: maximum. Keyed by id, so it survives an object being moved about.
         self.best_hp: Dict[int, int] = {}
+
+        #: Sweeping even the hot regions costs ninety milliseconds on a busy
+        #: map, and doing it every tick is most of the delay between killing one
+        #: monster and clicking the next. Between sweeps the addresses found
+        #: last time are simply read again - each object is checked as it is
+        #: read, because the first qword of a live one is still the class
+        #: pointer and a freed one's is not. Things that spawn in the meantime
+        #: are missed for up to `resweep` seconds, which costs nothing: the next
+        #: monster to fight is one that already exists.
+        self.resweep = resweep
+        self.addresses: List[int] = []
+        self.swept_at = 0.0
         #: The last read's raw object bytes, by address. The learner works on
         #: these; the bot works on the decoded snapshot and ignores them.
         self.bodies: Dict[int, bytes] = {}
@@ -237,8 +250,13 @@ class WorldReader:
 
     def read(self, force_full: bool = False) -> World:
         started = time.perf_counter()
-        addresses = self.hot.sweep(self.process, self._vtable(),
-                                   force_full=force_full)
+        vtable = self._vtable()
+        due = time.monotonic() - self.swept_at >= self.resweep
+        if force_full or due or not self.addresses:
+            self.addresses = self.hot.sweep(self.process, vtable,
+                                            force_full=force_full)
+            self.swept_at = time.monotonic()
+        addresses = list(self.addresses)
         swept = time.perf_counter() - started
 
         me_at = resolve_player(self.process, self.module, self.layout)
@@ -248,15 +266,21 @@ class WorldReader:
         entities: List[Entity] = []
         me: Optional[Entity] = None
         self.bodies = {}
+        alive: List[int] = []
+        head = vtable.to_bytes(8, "little")
         for address in addresses:
             body = self.process.read(address, self.span)
             if not body or len(body) < self.span:
                 continue
+            if body[:8] != head:
+                continue          # freed since the sweep, and reused by something
+            alive.append(address)
             entity = self._decode(address, body)
             entities.append(entity)
             self.bodies[address] = body
             if address == me_at:
                 me = entity
+        self.addresses = alive
         self._follow_targets(entities)
         return World(me=me, entities=entities, at=time.time(), swept=swept)
 

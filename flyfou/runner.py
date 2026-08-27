@@ -43,8 +43,17 @@ from .mem.world import WorldReader
 from .report import (FIGHTING, PAUSED, RESTING, RETURNING, SEARCHING, STOPPED,
                      WAITING, LogLine, Reporter, Status, log_path)
 
-#: How often the loop runs. The sweep costs 30-90ms, so this is not a busy wait.
-TICK = 0.35
+#: How often the loop runs.
+#:
+#: The reading underneath costs fifteen to twenty milliseconds most ticks, so
+#: this is what decides how long the bot stands about after killing something.
+#: It used to be a third of a second, which with a sweep on top came to nearly a
+#: second between one monster and the next.
+TICK = 0.12
+
+#: No wait at all when something just changed. Killing a monster is exactly the
+#: moment to look again rather than to sleep.
+QUICK = 0.01
 
 #: A walk that has not moved us in this long has hit something.
 STUCK = 2.2
@@ -55,6 +64,9 @@ SIDESTEPS = 4
 
 #: An attack key is not spammed faster than this.
 SWING = 0.8
+
+#: How often food or a heal is pressed while sitting still.
+HEAL_EVERY = 2.0
 
 #: A fight that has drawn no blood in this long gets clicked again.
 #:
@@ -109,6 +121,8 @@ class Bot:
         self._selected = 0
         self._selected_hp = 0
         self._clicked_at = 0.0
+        self._healed_at = 0.0
+        self._was_after = 0
         self._process = None
         self._module = None
         self._reader: Optional[WorldReader] = None
@@ -229,6 +243,9 @@ class Bot:
         elif plan.do == REST:
             control.stop()
             self._selected = 0
+            if self.rules.heal_key and now - self._healed_at >= HEAL_EVERY:
+                self._healed_at = now
+                control.press(self.rules.heal_key)
             self._set(state=RESTING)
 
         else:
@@ -353,9 +370,10 @@ class Bot:
         self.reporter.hint("stuck", "Something is in the way; stepping around it.")
 
     # ------------------------------------------------------------------- kills
-    def _count_kills(self, world, was: int) -> None:
+    def _count_kills(self, world, was: int) -> bool:
+        """Count a kill, and say whether one happened so the loop can hurry."""
         if not was:
-            return
+            return False
         gone = world.find(was)
         if gone is None or not gone.alive:
             self.memory.kills += 1
@@ -363,6 +381,8 @@ class Bot:
             self.reporter.log(
                 f"Killed {gone.name if gone else 'it'} "
                 f"({self.memory.kills} so far).", "good")
+            return True
+        return False
 
     # -------------------------------------------------------------------- loop
     def _run(self) -> None:
@@ -376,6 +396,7 @@ class Bot:
                 continue
             now = time.time()
 
+            hurry = False
             if not self._attach():
                 self._set(state=WAITING)
                 time.sleep(1.0)
@@ -406,9 +427,12 @@ class Bot:
                 # hitting the leech.
                 self.memory.observe(world, now, self.rules.protect)
                 plan = choose(world, self.rules, self.memory, now=now)
-                self._count_kills(world,
-                                  was if was != self.memory.target_id else 0)
+                killed = self._count_kills(
+                    world, was if was != self.memory.target_id else 0)
                 self._do(plan, world, now)
+                hurry = killed or plan.entity is not None and (
+                    plan.entity.id != self._was_after)
+                self._was_after = plan.entity.id if plan.entity else 0
             except Exception as bad:                   # noqa: BLE001
                 # One bad tick used to end the run in silence: the thread died,
                 # the panel kept showing whatever it last saw, and nothing said
@@ -434,7 +458,10 @@ class Bot:
                       window_found=winutil.window_exists(self.hwnd),
                       window_focused=self._control.focused())
             active += TICK
-            time.sleep(TICK)
+            # A kill or a change of quarry is the moment to look again, not the
+            # moment to sleep: waiting a full tick there is most of the pause a
+            # person notices between one monster and the next.
+            time.sleep(QUICK if hurry else TICK)
 
         if self._control:
             self._control.release_all()

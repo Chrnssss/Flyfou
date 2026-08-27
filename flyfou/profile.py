@@ -207,6 +207,8 @@ class Profile:
     avoid_killsteal: bool = True
     self_defence: bool = True
     rest_below: float = 0.35
+    fight_above: float = 0.80          # health to recover to before fighting on
+    heal_key: Optional[str] = None     # food or a heal, pressed while resting
 
     hotkeys: Hotkeys = field(default_factory=Hotkeys)
     created: str = ""
@@ -234,7 +236,9 @@ class Profile:
             avoid_killsteal=bool(self.avoid_killsteal),
             self_defence=bool(self.self_defence),
             rest_below=float(self.rest_below),
+            fight_above=float(self.fight_above),
             attack_key=self.attack_key or "1",
+            heal_key=self.heal_key or "",
         )
 
     # ---- serialisation --------------------------------------------------- #
@@ -283,6 +287,8 @@ class Profile:
                 "avoid_killsteal": bool(self.avoid_killsteal),
                 "self_defence": bool(self.self_defence),
                 "rest_below": float(self.rest_below),
+                "fight_above": float(self.fight_above),
+                "heal_key": self.heal_key,
             },
             "hotkeys": self.hotkeys.to_dict(),
         }
@@ -333,6 +339,8 @@ class Profile:
             avoid_killsteal=bool(farming.get("avoid_killsteal", True)),
             self_defence=bool(farming.get("self_defence", True)),
             rest_below=float(farming.get("rest_below", 0.35)),
+            fight_above=float(farming.get("fight_above", 0.80)),
+            heal_key=farming.get("heal_key") or None,
             hotkeys=Hotkeys.from_dict(data.get("hotkeys")),
             created=str(data.get("created", "")),
             directory=directory,

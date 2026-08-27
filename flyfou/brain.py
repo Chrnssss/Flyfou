@@ -101,7 +101,9 @@ class Rules:
     avoid_killsteal: bool = True
     self_defence: bool = True
     rest_below: float = 0.35             # fraction of health to stop fighting at
+    fight_above: float = 0.80            # and to start again at
     attack_key: str = "1"
+    heal_key: str = ""                   # food or a heal, pressed while resting
 
     def wants(self, entity: Entity) -> bool:
         """Is this something we are allowed to attack?
@@ -166,6 +168,7 @@ class Memory:
     bled_at: Dict[int, float] = field(default_factory=dict)   # id -> when
     my_hp: int = 0
     hurt_at: float = 0.0
+    resting: bool = False
     ward_hp: int = 0
     ward_hurt_at: float = 0.0
 
@@ -261,9 +264,23 @@ def choose(world: World, rules: Rules, memory: Memory,
     friends = {rules.protect} if rules.protect else set()
 
     # 1. our own skin -------------------------------------------------------
-    if me.max_hp and me.hp < rules.rest_below * me.max_hp:
-        return Plan(REST, why="health is %d of %d, below the rest threshold"
-                              % (me.hp, me.max_hp))
+    #
+    # Resting has to be sticky. Stopping at a third of our health and starting
+    # again the instant it ticks over a third means fighting the next monster
+    # on almost no health at all, which is how a bot dies somewhere nobody is
+    # watching. So once it sits down it stays down until it is properly well.
+    if me.max_hp:
+        share = me.hp / float(me.max_hp)
+        if memory.resting:
+            if share < rules.fight_above:
+                return Plan(REST, why="resting: %d of %d, waiting for %.0f%%"
+                                      % (me.hp, me.max_hp,
+                                         rules.fight_above * 100))
+            memory.resting = False
+        elif share < rules.rest_below:
+            memory.resting = True
+            return Plan(REST, why="health is %d of %d, below the rest threshold"
+                                  % (me.hp, me.max_hp))
 
     if rules.self_defence and now - memory.hurt_at <= UNDER_ATTACK:
         # Something is hitting us. If we are already in a fight it is almost
