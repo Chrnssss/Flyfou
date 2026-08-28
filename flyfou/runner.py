@@ -71,29 +71,36 @@ HEAL_EVERY = 2.0
 
 # A double click that misses leaves the bot certain it is fighting something,
 # standing there pressing a key at nothing, so a fight that draws no blood gets
-# clicked again. How long to wait first is the whole question, and one number
-# cannot answer it: a monster thirty units away draws no blood for several
-# seconds through no fault of the click.
+# clicked again. The question is how long to wait first, and the answer is not a
+# timer, it is whether anything is happening.
 #
-# What separates the two is movement. A click that lands makes the character set
-# off towards the thing; a click that missed leaves it standing exactly where it
-# was. So the bot watches its own feet, and the moment it can tell the click did
-# nothing it clicks again rather than waiting out a timer.
+# Two things count as something happening: the monster is losing health, or the
+# distance to it is shrinking. Either means the click landed and the client is
+# busy, so the clock goes back to zero and the bot is patient for as long as
+# progress continues. Neither means the click did nothing, and the wait is only
+# as long as it takes the client to have noticed a click at all.
+#
+# An earlier version asked whether the character had MOVED, which is not the
+# same question and cost four seconds every time it got it wrong: a character
+# drifting, knocked back, or finishing an older walk reads as busy while doing
+# nothing about the monster at all. Fifty-seven times in five thousand kills.
 
-#: Standing still, out of reach, having just clicked: that click missed. This is
-#: only long enough for the client to have noticed the click at all.
-RETRY_STILL = 0.35
+#: Out of reach and getting no closer: that click missed. Long enough only for
+#: the client to have seen it.
+RETRY_STILL = 0.3
 
-#: In reach and swinging, but nothing is bleeding. Slower, because a real swing
-#: takes a moment to land and re-clicking mid-swing throws the animation away.
-RETRY_SWINGING = 1.2
+#: In reach, nothing bleeding yet. A swing takes a moment to land, and a kill on
+#: this character takes about nine tenths of a second start to finish, so
+#: anything longer than this is worse than a wasted click.
+RETRY_SWINGING = 0.5
 
-#: Moving towards it, which means the click worked. Only a genuinely stuck walk
-#: needs clicking again, and the brain gives up on those separately.
-RETRY_WALKING = 4.0
+#: Closing this much counts as getting closer rather than milling about.
+CLOSING = 0.5
 
-#: Feet that moved this far have moved.
-A_STEP = 0.6
+#: How long a monster that cannot be clicked at all is left alone. Short: the
+#: camera moves constantly, so one that is behind the chat box now will not be
+#: in a moment - but standing and staring at it is never right.
+UNREACHABLE = 3.0
 
 
 @dataclass
@@ -139,7 +146,7 @@ class Bot:
         self._selected = 0
         self._selected_hp = 0
         self._clicked_at = 0.0
-        self._clicked_from = None
+        self._clicked_gap = 0.0
         self._healed_at = 0.0
         self._was_after = 0
         self._process = None
@@ -289,23 +296,18 @@ class Bot:
         be seen at all.
         """
         control, entity, me = self._control, plan.entity, world.me
+        gap = entity.apart_from(me)
 
-        if entity.hp < self._selected_hp:
-            # It is bleeding, so the click landed and the client is doing its
-            # job. Keep the clock running from the last thing that actually
-            # happened rather than from the last thing we tried.
+        if entity.hp < self._selected_hp or gap < self._clicked_gap - CLOSING:
+            # Something is happening: it is bleeding, or we are closing on it.
+            # Either way the click landed and the client is busy, so the clock
+            # starts again from the last thing that actually happened rather
+            # than from the last thing we tried.
             self._selected_hp = entity.hp
+            self._clicked_gap = gap
             self._clicked_at = now
-            self._clicked_from = me.pos
 
-        walking = (self._clicked_from is not None and me is not None
-                   and _apart(me.pos, self._clicked_from) > A_STEP)
-        if walking:
-            patience = RETRY_WALKING
-        elif entity.apart_from(me) > IN_REACH:
-            patience = RETRY_STILL     # told to go and it did not go: it missed
-        else:
-            patience = RETRY_SWINGING
+        patience = RETRY_STILL if gap > IN_REACH else RETRY_SWINGING
 
         fresh = self._selected != entity.id
         stale = now - self._clicked_at > patience
@@ -313,20 +315,25 @@ class Bot:
             if control.attack(entity):
                 if not fresh:
                     self.reporter.hint(
-                        "again", "%s: nothing happened in %.1fs (%s); clicking "
-                                 "again." % (entity.name, patience,
-                                             "walking" if walking else
-                                             "stood still"), cooldown=8.0)
+                        "again", "%s: no damage and no closing in %.1fs; "
+                                 "clicking again." % (entity.name, patience),
+                        cooldown=8.0)
                 self._selected = entity.id
                 self._selected_hp = entity.hp
+                self._clicked_gap = gap
                 self._clicked_at = now
-                self._clicked_from = me.pos if me else None
                 self._last_swing = now
                 self.walking.spot = None
                 self._set(state=FIGHTING)
                 return
+            # It cannot be clicked at all - behind the interface, or off the
+            # edge of the view. Walking at it helps, but standing in front of it
+            # waiting does not, so it is set aside and the next nearest monster
+            # is taken instead. It comes back in a moment.
             self.reporter.hint("noclick", "Could not click %s: %s"
                                % (entity.name, self._why(control)))
+            self.memory.abandon(entity.id, now, UNREACHABLE)
+            self._selected = 0
             self._walk(Plan(WALK, entity=entity, spot=entity.pos,
                             why=plan.why), world, now)
         elif self.rules.attack_key and now - self._last_swing >= SWING:
