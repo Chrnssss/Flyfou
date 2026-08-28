@@ -85,6 +85,10 @@ UNDER_ATTACK = 3.0
 #: How far a thing can be and still plausibly be what just hit us.
 SWINGING_RANGE = 12.0
 
+#: Further than this from where we started is not wandering, it is a different
+#: place: a teleport, a map change, or a trip back to town after dying.
+ELSEWHERE = 400.0
+
 
 @dataclass
 class Rules:
@@ -208,6 +212,12 @@ class Memory:
         self.seen_hp = fresh
         self.bled_at = {who: when for who, when in self.bled_at.items()
                         if now - when <= CLAIMED}
+        # Every monster given up on used to be remembered for ever. Ids churn
+        # constantly as things spawn and despawn, so after a night of farming
+        # that was hundreds of thousands of entries nobody would ever read
+        # again. A sulk that has expired is not worth keeping.
+        self.give_up = {who: until for who, until in self.give_up.items()
+                        if until > now}
 
         me = world.me
         if me is not None:
@@ -262,6 +272,18 @@ def choose(world: World, rules: Rules, memory: Memory,
         return Plan(IDLE, why="our own character is not in the snapshot")
 
     friends = {rules.protect} if rules.protect else set()
+
+    # 0. are we even alive, and are we still where we were? -----------------
+    if me.max_hp and me.hp <= 0:
+        memory.resting = True
+        return Plan(REST, why="the character is dead")
+
+    if rules.origin and _ground(me.pos, rules.origin) > ELSEWHERE:
+        # Not wandering - somewhere else entirely. Keeping the old origin means
+        # a farming radius measured from a place on another map, which excludes
+        # everything, and a walk home that can never arrive.
+        rules.origin = me.pos
+        memory.route_step = 0
 
     # 1. our own skin -------------------------------------------------------
     #

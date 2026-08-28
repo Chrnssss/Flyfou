@@ -12,4 +12,5 @@ __pycache__/
 /probes
 _*.png
 _*.npz
+_*.npy
 _scratch_home/

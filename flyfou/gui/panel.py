@@ -96,10 +96,16 @@ class ControlPanel(tk.Toplevel):
                                           maximum=100, length=316)
         self.player_bar.pack(fill="x", pady=(4, 0))
 
-        if True:        # there is always a target bar now: it is a number
+        # There is always a target bar now: what it is fighting is a number in
+        # memory rather than a bar it had to find on the screen, and the thing
+        # worth showing beside it is the name, so a person can see at a glance
+        # whether it is working through the monsters they meant.
+        if True:
             row2 = ttk.Frame(health.body, style="Panel.TFrame")
             row2.pack(fill="x", pady=(10, 0))
-            ttk.Label(row2, text="Target HP", style="PanelMuted.TLabel").pack(side="left")
+            self.target_label = ttk.Label(row2, text="Target",
+                                          style="PanelMuted.TLabel")
+            self.target_label.pack(side="left")
             self.target_value = ttk.Label(row2, text="—", style="Panel.TLabel", font=theme.FONT_BOLD)
             self.target_value.pack(side="right")
             self.target_bar = ttk.Progressbar(health.body, style="Panel.Horizontal.TProgressbar",
@@ -214,6 +220,8 @@ class ControlPanel(tk.Toplevel):
         self._render_bar(self.player_bar, self.player_value, status.player_hp, colour_coded=True)
         if self.target_bar is not None:
             self._render_bar(self.target_bar, self.target_value, status.target_hp)
+            self.target_label.configure(
+                text=status.target_name[:22] if status.target_name else "Target")
 
         if not status.running:
             self.window_chip.set("Not running.", "info")
@@ -223,8 +231,10 @@ class ControlPanel(tk.Toplevel):
             self.window_chip.set("Game is behind another window — click it to let Flyfou act.", "warn")
         else:
             width, height = status.client_size
-            size = f" ({width}×{height})" if width else ""
-            self.window_chip.set(f"Game window found{size}.", "good")
+            size = f"{width}×{height}" if width else "game window found"
+            seen = (f", {status.movers} things in sight" if status.movers
+                    else ", nothing in sight yet")
+            self.window_chip.set(size + seen + ".", "good")
 
         if not status.running:
             self.primary.configure(text="Start again", style="Accent.TButton")

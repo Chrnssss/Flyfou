@@ -281,6 +281,15 @@ class WorldReader:
             if address == me_at:
                 me = entity
         self.addresses = alive
+
+        # Remembered maximums are keyed by id, and ids churn all day. Keeping
+        # one for everything ever seen is a leak; keeping one for everything
+        # currently in the world is the point of it.
+        if self.layout.max_hp is None and self.best_hp:
+            here = {entity.id for entity in entities if entity.id}
+            if len(self.best_hp) > 4 * max(len(here), 1):
+                self.best_hp = {who: best for who, best
+                                in self.best_hp.items() if who in here}
         self._follow_targets(entities)
         return World(me=me, entities=entities, at=time.time(), swept=swept)
 

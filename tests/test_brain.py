@@ -333,6 +333,36 @@ check("a corpse is dropped for the next one along", plan.entity.id, 11)
 
 
 # --------------------------------------------------------------------------- #
+print("\nit survives being left running all night")
+
+# Ids churn constantly, so anything remembered per id has to be forgotten again.
+memory = Memory()
+now = 5000.0
+for tick in range(400):
+    crowd = [being(tick * 10 + i, "Aibatt", x=float(i)) for i in range(15)]
+    memory.observe(world_of(*crowd), now + tick)
+    memory.abandon(tick * 10, now + tick)
+check("what it saw is only what is there", len(memory.seen_hp) <= 20, True)
+check("expired sulks are forgotten", len(memory.give_up) <= 40, True)
+
+# Dying is not a fight it can win by trying harder.
+corpse = being(1, "Mynuthyj", kind=PLAYER, hp=0, max_hp=40000)
+plan = choose(world_of(being(10, "Aibatt", x=1), me=corpse), FARM, Memory())
+check("a dead character does not attack", plan.do, REST)
+check("and it says so plainly", "dead" in plan.why, True)
+
+# A teleport or a map change is not something to walk home from: an origin on
+# another map excludes every monster and a walk to it can never arrive.
+faraway = being(1, "Mynuthyj", kind=PLAYER, hp=40000, max_hp=40000,
+                x=9000, z=9000)
+rules = Rules(levels=(10, 200), radius=70.0, origin=(0.0, 0.0, 0.0))
+plan = choose(world_of(being(10, "Aibatt", x=9001, z=9000), me=faraway),
+              rules, Memory())
+check("somewhere else becomes the new here", rules.origin, faraway.pos)
+check("and it farms there instead of walking to another map", plan.do, ATTACK)
+
+
+# --------------------------------------------------------------------------- #
 print("\nit counts kills and runtime")
 
 memory = Memory(started=1000.0)

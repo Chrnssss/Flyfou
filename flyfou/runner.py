@@ -36,7 +36,8 @@ from dataclasses import dataclass, field
 from typing import Optional, Tuple
 
 from . import inputs, winutil
-from .brain import (ATTACK, IDLE, REST, WALK, Memory, Plan, Rules, choose)
+from .brain import (ATTACK, IDLE, IN_REACH, REST, WALK, Memory, Plan, Rules,
+                    choose)
 from .control import Control
 from .mem import LayoutStore, layout_for, open_client
 from .mem.world import WorldReader
@@ -68,14 +69,31 @@ SWING = 0.8
 #: How often food or a heal is pressed while sitting still.
 HEAL_EVERY = 2.0
 
-#: A fight that has drawn no blood in this long gets clicked again.
-#:
-#: A double click that misses leaves the bot certain it is fighting something,
-#: standing there pressing a key at nothing. It used to wait for the brain to
-#: give up, which takes ten seconds, and from the outside that is the bot
-#: stopping for a quarter of a minute every few kills. Clicking again is cheap
-#: and it is what a person would do.
-RETRY = 2.5
+# A double click that misses leaves the bot certain it is fighting something,
+# standing there pressing a key at nothing, so a fight that draws no blood gets
+# clicked again. How long to wait first is the whole question, and one number
+# cannot answer it: a monster thirty units away draws no blood for several
+# seconds through no fault of the click.
+#
+# What separates the two is movement. A click that lands makes the character set
+# off towards the thing; a click that missed leaves it standing exactly where it
+# was. So the bot watches its own feet, and the moment it can tell the click did
+# nothing it clicks again rather than waiting out a timer.
+
+#: Standing still, out of reach, having just clicked: that click missed. This is
+#: only long enough for the client to have noticed the click at all.
+RETRY_STILL = 0.35
+
+#: In reach and swinging, but nothing is bleeding. Slower, because a real swing
+#: takes a moment to land and re-clicking mid-swing throws the animation away.
+RETRY_SWINGING = 1.2
+
+#: Moving towards it, which means the click worked. Only a genuinely stuck walk
+#: needs clicking again, and the brain gives up on those separately.
+RETRY_WALKING = 4.0
+
+#: Feet that moved this far have moved.
+A_STEP = 0.6
 
 
 @dataclass
@@ -121,6 +139,7 @@ class Bot:
         self._selected = 0
         self._selected_hp = 0
         self._clicked_at = 0.0
+        self._clicked_from = None
         self._healed_at = 0.0
         self._was_after = 0
         self._process = None
@@ -241,6 +260,10 @@ class Bot:
             self._set(state=RETURNING)
 
         elif plan.do == REST:
+            if "dead" in plan.why:
+                self.reporter.hint(
+                    "dead", "The character is dead. Nothing will happen until "
+                            "it is back on its feet.", cooldown=60.0)
             control.stop()
             self._selected = 0
             if self.rules.heal_key and now - self._healed_at >= HEAL_EVERY:
@@ -265,7 +288,7 @@ class Bot:
         gets clicked, however far away it is. Walking is only for when it cannot
         be seen at all.
         """
-        control, entity = self._control, plan.entity
+        control, entity, me = self._control, plan.entity, world.me
 
         if entity.hp < self._selected_hp:
             # It is bleeding, so the click landed and the client is doing its
@@ -273,18 +296,31 @@ class Bot:
             # happened rather than from the last thing we tried.
             self._selected_hp = entity.hp
             self._clicked_at = now
+            self._clicked_from = me.pos
+
+        walking = (self._clicked_from is not None and me is not None
+                   and _apart(me.pos, self._clicked_from) > A_STEP)
+        if walking:
+            patience = RETRY_WALKING
+        elif entity.apart_from(me) > IN_REACH:
+            patience = RETRY_STILL     # told to go and it did not go: it missed
+        else:
+            patience = RETRY_SWINGING
 
         fresh = self._selected != entity.id
-        stale = now - self._clicked_at > RETRY
+        stale = now - self._clicked_at > patience
         if fresh or stale:
             if control.attack(entity):
                 if not fresh:
                     self.reporter.hint(
-                        "again", "%s has taken no damage in %.0fs; clicking it "
-                                 "again." % (entity.name, RETRY), cooldown=8.0)
+                        "again", "%s: nothing happened in %.1fs (%s); clicking "
+                                 "again." % (entity.name, patience,
+                                             "walking" if walking else
+                                             "stood still"), cooldown=8.0)
                 self._selected = entity.id
                 self._selected_hp = entity.hp
                 self._clicked_at = now
+                self._clicked_from = me.pos if me else None
                 self._last_swing = now
                 self.walking.spot = None
                 self._set(state=FIGHTING)
@@ -446,6 +482,7 @@ class Bot:
                                    cooldown=10.0)
 
             target = world.find(self.memory.target_id)
+            rect = self._control.area()
             self._set(kills=self.memory.kills,
                       runtime=now - started,
                       active_seconds=active,
@@ -456,7 +493,8 @@ class Bot:
                       target_hp=(target.hp / target.max_hp
                                  if target and target.max_hp else None),
                       window_found=winutil.window_exists(self.hwnd),
-                      window_focused=self._control.focused())
+                      window_focused=self._control.focused(),
+                      client_size=(rect[2], rect[3]) if rect else (0, 0))
             active += TICK
             # A kill or a change of quarry is the moment to look again, not the
             # moment to sleep: waiting a full tick there is most of the pause a
