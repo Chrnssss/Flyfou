@@ -102,6 +102,19 @@ CLOSING = 0.5
 #: in a moment - but standing and staring at it is never right.
 UNREACHABLE = 3.0
 
+#: How often to say what the run has been doing.
+#:
+#: Repeated complaints are rate limited, which is right for reading a log live
+#: and wrong for working out afterwards where the time went: a hundred and fifty
+#: gaps of several seconds had nothing at all written in them, because
+#: everything that would have explained them was suppressed as a repeat. So the
+#: suppressed ones are counted instead and the tally is printed on a clock.
+TALLY_EVERY = 30.0
+
+#: How often a change of state may be logged. Fighting and searching can swap
+#: back and forth on consecutive ticks, and a line each would drown the log.
+STATE_EVERY = 0.8
+
 
 @dataclass
 class Walking:
@@ -147,6 +160,9 @@ class Bot:
         self._selected_hp = 0
         self._clicked_at = 0.0
         self._clicked_gap = 0.0
+        self._said_state_at = 0.0
+        self._tallied_at = 0.0
+        self._tally = {}
         self._healed_at = 0.0
         self._was_after = 0
         self._process = None
@@ -198,8 +214,17 @@ class Bot:
 
     def _set(self, **fields) -> None:
         with self._lock:
+            was = self._status.state
             for key, value in fields.items():
                 setattr(self._status, key, value)
+            now_state = self._status.state
+        # Outside the lock: the reporter takes its own, and holding two is how
+        # a bot ends up deadlocked at three in the morning.
+        if now_state != was:
+            moment = time.monotonic()
+            if moment - self._said_state_at >= STATE_EVERY:
+                self._said_state_at = moment
+                self.reporter.log("%s -> %s" % (was, now_state))
 
     # ------------------------------------------------------------- attaching
     def _attach(self) -> bool:
@@ -314,10 +339,13 @@ class Bot:
         if fresh or stale:
             if control.attack(entity):
                 if not fresh:
+                    self._count("re-clicks (nothing was happening)")
                     self.reporter.hint(
                         "again", "%s: no damage and no closing in %.1fs; "
                                  "clicking again." % (entity.name, patience),
                         cooldown=8.0)
+                else:
+                    self._count("monsters engaged")
                 self._selected = entity.id
                 self._selected_hp = entity.hp
                 self._clicked_gap = gap
@@ -330,6 +358,7 @@ class Bot:
             # edge of the view. Walking at it helps, but standing in front of it
             # waiting does not, so it is set aside and the next nearest monster
             # is taken instead. It comes back in a moment.
+            self._count("unclickable, set aside")
             self.reporter.hint("noclick", "Could not click %s: %s"
                                % (entity.name, self._why(control)))
             self.memory.abandon(entity.id, now, UNREACHABLE)
@@ -342,6 +371,22 @@ class Bot:
             self._last_swing = now
             control.press(self.rules.attack_key)
         self._set(state=FIGHTING)
+
+    def _count(self, what: str) -> None:
+        """Note that something happened, for the tally rather than the log."""
+        self._tally[what] = self._tally.get(what, 0) + 1
+
+    def _say_tally(self, now: float) -> None:
+        if now - self._tallied_at < TALLY_EVERY:
+            return
+        spent = now - self._tallied_at
+        self._tallied_at = now
+        if not self._tally:
+            return
+        said = ", ".join("%d %s" % (count, what) for what, count
+                         in sorted(self._tally.items(), key=lambda kv: -kv[1]))
+        self.reporter.log("last %.0fs: %s" % (spent, said))
+        self._tally = {}
 
     @staticmethod
     def _why(control) -> str:
@@ -472,6 +517,9 @@ class Bot:
                 plan = choose(world, self.rules, self.memory, now=now)
                 killed = self._count_kills(
                     world, was if was != self.memory.target_id else 0)
+                if killed:
+                    self._count("kills")
+                self._say_tally(now)
                 self._do(plan, world, now)
                 hurry = killed or plan.entity is not None and (
                     plan.entity.id != self._was_after)
